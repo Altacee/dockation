@@ -278,6 +278,11 @@ export PATH=$PATH:/usr/local/go/bin
 export GOPROXY=https://proxy.golang.org,direct
 
 cd "$BUILD_DIR"
+
+# Create placeholder for embedded UI (workers don't need it)
+mkdir -p internal/server/dist
+echo "placeholder" > internal/server/dist/.gitkeep
+
 go build -o "$BINARY_PATH" ./cmd/docker-migrate
 
 chmod +x "$BINARY_PATH"
