@@ -461,3 +461,33 @@ func (cm *CryptoManager) GetClientTLSConfig() (*tls.Config, error) {
 
 	return config, nil
 }
+
+// TLSConfigNoClientAuth returns TLS configuration for server that doesn't require client certs
+// This is used for master-worker architecture where auth is via enrollment tokens
+func (cm *CryptoManager) TLSConfigNoClientAuth() (*tls.Config, error) {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	if cm.certificate == nil || cm.privateKey == nil {
+		return nil, fmt.Errorf("certificate or private key not initialized")
+	}
+
+	cert := tls.Certificate{
+		Certificate: [][]byte{cm.certificate.Raw},
+		PrivateKey:  cm.privateKey,
+	}
+
+	config := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS13,
+		CipherSuites: []uint16{
+			tls.TLS_AES_256_GCM_SHA384,
+			tls.TLS_CHACHA20_POLY1305_SHA256,
+			tls.TLS_AES_128_GCM_SHA256,
+		},
+		PreferServerCipherSuites: true,
+		ClientAuth:               tls.NoClientCert, // Don't require client certs
+	}
+
+	return config, nil
+}

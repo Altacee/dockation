@@ -2,10 +2,12 @@ package peer
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/artemis/docker-migrate/internal/config"
@@ -31,14 +33,25 @@ const (
 // GRPCServer handles gRPC server for peer communication
 type GRPCServer struct {
 	pb.UnimplementedMigrationServiceServer
-	server     *grpc.Server
-	docker     *docker.Client
-	transfer   *TransferManager
-	pairing    *PairingManager
-	crypto     *CryptoManager
-	config     *config.Config
-	logger     *observability.Logger
-	peerID     string
+	server           *grpc.Server
+	docker           *docker.Client
+	transfer         *TransferManager
+	pairing          *PairingManager
+	crypto           *CryptoManager
+	config           *config.Config
+	logger           *observability.Logger
+	peerID           string
+	skipClientVerify bool // For master mode, don't verify client certs
+}
+
+// GRPCServerOption is a functional option for GRPCServer
+type GRPCServerOption func(*GRPCServer)
+
+// WithNoClientVerify disables client certificate verification (for master mode)
+func WithNoClientVerify() GRPCServerOption {
+	return func(gs *GRPCServer) {
+		gs.skipClientVerify = true
+	}
 }
 
 // NewGRPCServer creates a new gRPC server
@@ -49,6 +62,7 @@ func NewGRPCServer(
 	crypto *CryptoManager,
 	cfg *config.Config,
 	logger *observability.Logger,
+	opts ...GRPCServerOption,
 ) (*GRPCServer, error) {
 
 	peerID := fmt.Sprintf("peer-%s", crypto.GetFingerprint()[:8])
@@ -63,8 +77,19 @@ func NewGRPCServer(
 		peerID:   peerID,
 	}
 
-	// Get TLS config
-	tlsConfig, err := crypto.TLSConfig()
+	// Apply options
+	for _, opt := range opts {
+		opt(gs)
+	}
+
+	// Get TLS config - use different config based on mode
+	var tlsConfig *tls.Config
+	var err error
+	if gs.skipClientVerify {
+		tlsConfig, err = crypto.TLSConfigNoClientAuth()
+	} else {
+		tlsConfig, err = crypto.TLSConfig()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TLS config: %w", err)
 	}
@@ -268,17 +293,20 @@ func (gs *GRPCServer) unaryInterceptor(
 ) (interface{}, error) {
 	start := time.Now()
 
-	// Verify peer certificate
-	if err := gs.verifyPeer(ctx); err != nil {
-		gs.logger.Warn("peer verification failed", zap.Error(err))
-		return nil, status.Error(codes.Unauthenticated, "peer not trusted")
+	// Skip peer verification for master mode (auth via enrollment token)
+	// or for MasterService methods
+	if !gs.skipClientVerify && !isMasterServiceMethod(info.FullMethod) {
+		if err := gs.verifyPeer(ctx); err != nil {
+			gs.logger.Warn("peer verification failed", zap.Error(err))
+			return nil, status.Error(codes.Unauthenticated, "peer not trusted")
+		}
 	}
 
 	// Call handler
 	resp, err := handler(ctx, req)
 
 	// Log
-	gs.logger.Info("unary call",
+	gs.logger.Debug("unary call",
 		zap.String("method", info.FullMethod),
 		zap.Duration("duration", time.Since(start)),
 		zap.Error(err),
@@ -296,23 +324,31 @@ func (gs *GRPCServer) streamInterceptor(
 ) error {
 	start := time.Now()
 
-	// Verify peer certificate
-	if err := gs.verifyPeer(ss.Context()); err != nil {
-		gs.logger.Warn("peer verification failed", zap.Error(err))
-		return status.Error(codes.Unauthenticated, "peer not trusted")
+	// Skip peer verification for master mode (auth via enrollment token)
+	// or for MasterService methods
+	if !gs.skipClientVerify && !isMasterServiceMethod(info.FullMethod) {
+		if err := gs.verifyPeer(ss.Context()); err != nil {
+			gs.logger.Warn("peer verification failed", zap.Error(err))
+			return status.Error(codes.Unauthenticated, "peer not trusted")
+		}
 	}
 
 	// Call handler
 	err := handler(srv, ss)
 
 	// Log
-	gs.logger.Info("stream call",
+	gs.logger.Debug("stream call",
 		zap.String("method", info.FullMethod),
 		zap.Duration("duration", time.Since(start)),
 		zap.Error(err),
 	)
 
 	return err
+}
+
+// isMasterServiceMethod checks if the method belongs to MasterService
+func isMasterServiceMethod(fullMethod string) bool {
+	return strings.HasPrefix(fullMethod, "/proto.MasterService/")
 }
 
 // verifyPeer verifies the peer certificate is trusted

@@ -126,6 +126,12 @@ func runUIServer(cmd *cobra.Command, args []string) error {
 	)
 
 	// Initialize gRPC server (expects *observability.Logger)
+	// In master mode, don't require client certificates (auth via enrollment token)
+	var grpcOpts []peer.GRPCServerOption
+	if cfg.IsMaster() {
+		grpcOpts = append(grpcOpts, peer.WithNoClientVerify())
+	}
+
 	grpcServer, err := peer.NewGRPCServer(
 		dockerClient,
 		transferManager,
@@ -133,6 +139,7 @@ func runUIServer(cmd *cobra.Command, args []string) error {
 		cryptoManager,
 		cfg,
 		logger, // Pass Logger directly
+		grpcOpts...,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create gRPC server: %w", err)
