@@ -209,39 +209,88 @@ if [ "$SKIP_DOCKER_CHECK" = false ]; then
     fi
 fi
 
-# Get latest release version from GitHub
-log_info "Fetching latest release..."
-LATEST_VERSION=$(curl -sL https://api.github.com/repos/Altacee/dockation/releases/latest 2>/dev/null | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
-
-if [ -z "$LATEST_VERSION" ]; then
-    log_warn "Could not determine latest version, using v0.1.0"
-    LATEST_VERSION="v0.1.0"
+# Install git if not present
+if ! command -v git &> /dev/null; then
+    log_info "Installing git..."
+    if command -v apt-get &> /dev/null; then
+        apt-get update -qq && apt-get install -y -qq git
+    elif command -v yum &> /dev/null; then
+        yum install -y -q git
+    elif command -v dnf &> /dev/null; then
+        dnf install -y -q git
+    elif command -v pacman &> /dev/null; then
+        pacman -Sy --noconfirm git
+    elif command -v apk &> /dev/null; then
+        apk add --no-cache git
+    else
+        log_error "Could not install git. Please install it manually."
+        exit 1
+    fi
 fi
 
-log_info "Installing version: $LATEST_VERSION"
+# Install Go if not present
+install_go() {
+    log_info "Installing Go..."
+    GO_VERSION="1.22.0"
 
-# Download binary
-DOWNLOAD_URL="https://github.com/Altacee/dockation/releases/download/${LATEST_VERSION}/docker-migrate-${OS}-${ARCH}"
+    curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" -o /tmp/go.tar.gz
+    rm -rf /usr/local/go
+    tar -C /usr/local -xzf /tmp/go.tar.gz
+    rm /tmp/go.tar.gz
+
+    export PATH=$PATH:/usr/local/go/bin
+    log_info "Go ${GO_VERSION} installed"
+}
+
+# Check for Go
+if ! command -v go &> /dev/null; then
+    if [ ! -f /usr/local/go/bin/go ]; then
+        install_go
+    else
+        export PATH=$PATH:/usr/local/go/bin
+    fi
+fi
+
+# Set up build directory
+BUILD_DIR="/tmp/docker-migrate-build"
+REPO_URL="https://github.com/Altacee/dockation.git"
 BINARY_PATH="${INSTALL_DIR}/docker-migrate"
 
-log_info "Downloading docker-migrate from ${DOWNLOAD_URL}..."
-if ! curl -fsSL "$DOWNLOAD_URL" -o "$BINARY_PATH"; then
-    log_error "Failed to download binary"
-    log_info "Check your internet connection and try again"
-    exit 1
+# Clone or update repository
+if [ -d "$BUILD_DIR" ]; then
+    log_info "Updating existing source..."
+    cd "$BUILD_DIR"
+    git fetch origin main
+    git reset --hard origin/main
+else
+    log_info "Cloning repository from GitHub..."
+    git clone "$REPO_URL" "$BUILD_DIR"
+    cd "$BUILD_DIR"
 fi
+
+# Get current commit
+COMMIT=$(git rev-parse --short HEAD)
+log_info "Building from commit: $COMMIT"
+
+# Build binary
+log_info "Building docker-migrate..."
+export PATH=$PATH:/usr/local/go/bin
+export GOPROXY=https://proxy.golang.org,direct
+
+cd "$BUILD_DIR"
+go build -o "$BINARY_PATH" ./cmd/docker-migrate
 
 chmod +x "$BINARY_PATH"
 log_info "Binary installed to $BINARY_PATH"
 
 # Verify binary works
 if ! "$BINARY_PATH" --help > /dev/null 2>&1; then
-    log_error "Binary verification failed - the downloaded file may be corrupted"
+    log_error "Binary verification failed"
     rm -f "$BINARY_PATH"
     exit 1
 fi
 
-log_info "Binary verified successfully"
+log_info "Binary verified successfully (commit: $COMMIT)"
 
 # Create config directory
 mkdir -p "$CONFIG_DIR"
