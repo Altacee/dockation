@@ -12,6 +12,7 @@ WORKER_NAME=$(hostname)
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/docker-migrate"
 SERVICE_USER="root"
+SKIP_DOCKER_CHECK=false
 
 # Colors for output
 RED='\033[0;31m'
@@ -50,14 +51,19 @@ while [[ $# -gt 0 ]]; do
             INSTALL_DIR="$2"
             shift 2
             ;;
+        --skip-docker-check)
+            SKIP_DOCKER_CHECK=true
+            shift
+            ;;
         --help)
             echo "Usage: $0 --master-url URL --token TOKEN [--name NAME]"
             echo ""
             echo "Options:"
-            echo "  --master-url    Master gRPC URL (required)"
-            echo "  --token         Enrollment token from master (required)"
-            echo "  --name          Worker name (default: hostname)"
-            echo "  --install-dir   Binary installation directory (default: /usr/local/bin)"
+            echo "  --master-url        Master gRPC URL (required)"
+            echo "  --token             Enrollment token from master (required)"
+            echo "  --name              Worker name (default: hostname)"
+            echo "  --install-dir       Binary installation directory (default: /usr/local/bin)"
+            echo "  --skip-docker-check Skip Docker installation check"
             exit 0
             ;;
         *)
@@ -107,17 +113,109 @@ fi
 
 # Check for root
 if [ "$EUID" -ne 0 ]; then
-    log_error "This script must be run as root"
+    log_error "This script must be run as root (use sudo)"
     exit 1
+fi
+
+# Check if Docker is installed
+install_docker() {
+    log_info "Installing Docker..."
+
+    # Detect package manager and install Docker
+    if command -v apt-get &> /dev/null; then
+        # Debian/Ubuntu
+        apt-get update -qq
+        apt-get install -y -qq ca-certificates curl gnupg lsb-release
+
+        # Add Docker's official GPG key
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg 2>/dev/null || true
+        chmod a+r /etc/apt/keyrings/docker.gpg
+
+        # Set up repository
+        DISTRO=$(lsb_release -is 2>/dev/null | tr '[:upper:]' '[:lower:]' || echo "ubuntu")
+        CODENAME=$(lsb_release -cs 2>/dev/null || echo "jammy")
+
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${DISTRO} ${CODENAME} stable" | \
+            tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+        apt-get update -qq
+        apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    elif command -v yum &> /dev/null; then
+        # RHEL/CentOS/Fedora
+        yum install -y -q yum-utils
+        yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        yum install -y -q docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    elif command -v dnf &> /dev/null; then
+        # Fedora
+        dnf install -y -q dnf-plugins-core
+        dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+        dnf install -y -q docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    elif command -v pacman &> /dev/null; then
+        # Arch Linux
+        pacman -Sy --noconfirm docker
+
+    elif command -v apk &> /dev/null; then
+        # Alpine
+        apk add --no-cache docker
+
+    else
+        log_error "Could not detect package manager. Please install Docker manually."
+        log_info "Visit: https://docs.docker.com/engine/install/"
+        exit 1
+    fi
+
+    # Start and enable Docker
+    systemctl start docker 2>/dev/null || service docker start 2>/dev/null || true
+    systemctl enable docker 2>/dev/null || true
+
+    log_info "Docker installed successfully"
+}
+
+if [ "$SKIP_DOCKER_CHECK" = false ]; then
+    if ! command -v docker &> /dev/null; then
+        log_warn "Docker is not installed"
+        read -p "Would you like to install Docker? [Y/n] " -n 1 -r REPLY
+        echo
+        REPLY=${REPLY:-Y}
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            install_docker
+        else
+            log_error "Docker is required for docker-migrate worker"
+            log_info "Install Docker manually or run with --skip-docker-check to skip this check"
+            exit 1
+        fi
+    else
+        log_info "Docker is installed"
+
+        # Check if Docker daemon is running
+        if ! docker info &> /dev/null; then
+            log_warn "Docker daemon is not running, attempting to start..."
+            systemctl start docker 2>/dev/null || service docker start 2>/dev/null || true
+            sleep 2
+
+            if ! docker info &> /dev/null; then
+                log_warn "Could not start Docker daemon. The worker service may fail to start."
+                log_info "Start Docker manually: systemctl start docker"
+            else
+                log_info "Docker daemon started"
+            fi
+        else
+            log_info "Docker daemon is running"
+        fi
+    fi
 fi
 
 # Get latest release version from GitHub
 log_info "Fetching latest release..."
-LATEST_VERSION=$(curl -sL https://api.github.com/repos/Altacee/dockation/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+LATEST_VERSION=$(curl -sL https://api.github.com/repos/Altacee/dockation/releases/latest 2>/dev/null | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
 
 if [ -z "$LATEST_VERSION" ]; then
-    log_warn "Could not determine latest version, using 'latest'"
-    LATEST_VERSION="latest"
+    log_warn "Could not determine latest version, using v0.1.0"
+    LATEST_VERSION="v0.1.0"
 fi
 
 log_info "Installing version: $LATEST_VERSION"
@@ -127,8 +225,9 @@ DOWNLOAD_URL="https://github.com/Altacee/dockation/releases/download/${LATEST_VE
 BINARY_PATH="${INSTALL_DIR}/docker-migrate"
 
 log_info "Downloading docker-migrate from ${DOWNLOAD_URL}..."
-if ! curl -sL "$DOWNLOAD_URL" -o "$BINARY_PATH"; then
+if ! curl -fsSL "$DOWNLOAD_URL" -o "$BINARY_PATH"; then
     log_error "Failed to download binary"
+    log_info "Check your internet connection and try again"
     exit 1
 fi
 
@@ -137,7 +236,8 @@ log_info "Binary installed to $BINARY_PATH"
 
 # Verify binary works
 if ! "$BINARY_PATH" --help > /dev/null 2>&1; then
-    log_error "Binary verification failed"
+    log_error "Binary verification failed - the downloaded file may be corrupted"
+    rm -f "$BINARY_PATH"
     exit 1
 fi
 
@@ -168,29 +268,42 @@ EOF
 chmod 600 "$CONFIG_FILE"
 log_info "Config written to $CONFIG_FILE"
 
+# Determine Docker service dependency
+DOCKER_REQUIRES=""
+DOCKER_AFTER="network-online.target"
+
+if systemctl list-unit-files docker.service &> /dev/null; then
+    DOCKER_REQUIRES="Requires=docker.service"
+    DOCKER_AFTER="network-online.target docker.service"
+    log_info "Docker systemd service detected"
+elif systemctl list-unit-files docker.socket &> /dev/null; then
+    DOCKER_REQUIRES="Requires=docker.socket"
+    DOCKER_AFTER="network-online.target docker.socket"
+    log_info "Docker socket activation detected"
+else
+    log_warn "Docker systemd service not found - service will start without Docker dependency"
+fi
+
 # Create systemd service file
 SERVICE_FILE="/etc/systemd/system/docker-migrate-worker.service"
 cat > "$SERVICE_FILE" << EOF
 [Unit]
 Description=Docker Migrate Worker
 Documentation=https://github.com/Altacee/dockation
-After=network-online.target docker.service
+After=${DOCKER_AFTER}
 Wants=network-online.target
-Requires=docker.service
+${DOCKER_REQUIRES}
 
 [Service]
 Type=simple
 User=${SERVICE_USER}
 ExecStart=${BINARY_PATH} worker --master-url ${MASTER_URL} --token ${TOKEN} --name ${WORKER_NAME} --config ${CONFIG_FILE}
 Restart=always
-RestartSec=5
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
 StandardOutput=journal
 StandardError=journal
-
-# Security hardening
-NoNewPrivileges=false
-ProtectSystem=false
-ProtectHome=false
 
 # Environment
 Environment=HOME=/root
@@ -204,22 +317,28 @@ log_info "Systemd service created at $SERVICE_FILE"
 # Reload systemd and start service
 systemctl daemon-reload
 systemctl enable docker-migrate-worker
-systemctl start docker-migrate-worker
 
-# Check status
-sleep 2
-if systemctl is-active --quiet docker-migrate-worker; then
-    log_info "docker-migrate-worker service started successfully!"
-    log_info ""
-    log_info "Useful commands:"
-    log_info "  Check status:  systemctl status docker-migrate-worker"
-    log_info "  View logs:     journalctl -u docker-migrate-worker -f"
-    log_info "  Stop service:  systemctl stop docker-migrate-worker"
-    log_info "  Start service: systemctl start docker-migrate-worker"
+# Try to start the service
+log_info "Starting docker-migrate-worker service..."
+if systemctl start docker-migrate-worker 2>&1; then
+    sleep 2
+    if systemctl is-active --quiet docker-migrate-worker; then
+        log_info "docker-migrate-worker service started successfully!"
+    else
+        log_warn "Service started but may not be running. Checking status..."
+        systemctl status docker-migrate-worker --no-pager || true
+    fi
 else
-    log_error "Service failed to start. Check logs with: journalctl -u docker-migrate-worker"
-    exit 1
+    log_warn "Service failed to start on first attempt. Checking logs..."
+    journalctl -u docker-migrate-worker -n 10 --no-pager 2>/dev/null || true
 fi
 
 log_info ""
-log_info "Installation complete! Worker '${WORKER_NAME}' is connecting to master at ${MASTER_URL}"
+log_info "Useful commands:"
+log_info "  Check status:  systemctl status docker-migrate-worker"
+log_info "  View logs:     journalctl -u docker-migrate-worker -f"
+log_info "  Stop service:  systemctl stop docker-migrate-worker"
+log_info "  Start service: systemctl start docker-migrate-worker"
+log_info "  Restart:       systemctl restart docker-migrate-worker"
+log_info ""
+log_info "Installation complete! Worker '${WORKER_NAME}' configured to connect to master at ${MASTER_URL}"
