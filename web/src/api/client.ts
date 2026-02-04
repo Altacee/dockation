@@ -12,6 +12,11 @@ import type {
   DryRunResult,
   ResourceCounts,
   SelectedResource,
+  Worker,
+  ConfigInfo,
+  WorkerResources,
+  StartMigrationRequest,
+  MigrationJob,
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
@@ -117,6 +122,44 @@ export const api = {
     list: () => fetchJSON<Peer[]>('/peers'),
     get: (id: string) => fetchJSON<Peer>(`/peers/${id}`),
     disconnect: (id: string) => fetchJSON<void>(`/peers/${id}/disconnect`, { method: 'POST' }),
+  },
+
+  // Workers (master-worker mode)
+  workers: {
+    list: async (): Promise<APIResponse<Worker[]>> => {
+      const response = await fetchJSON<{ workers: Worker[] }>('/workers');
+      if (response.success && response.data) {
+        return { success: true, data: response.data.workers };
+      }
+      return { success: false, error: response.error };
+    },
+    get: (id: string) => fetchJSON<Worker>(`/workers/${id}`),
+    resources: (id: string) => fetchJSON<WorkerResources>(`/workers/${id}/resources`),
+    remove: (id: string) => fetchJSON<void>(`/workers/${id}`, { method: 'DELETE' }),
+  },
+
+  // Migrations (master-worker mode)
+  migrations: {
+    start: (request: StartMigrationRequest) =>
+      fetchJSON<MigrationJob>('/migrations', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }),
+    list: async (): Promise<APIResponse<MigrationJob[]>> => {
+      const response = await fetchJSON<{ migrations: MigrationJob[] }>('/migrations');
+      if (response.success && response.data) {
+        return { success: true, data: response.data.migrations || [] };
+      }
+      return { success: false, error: response.error };
+    },
+    get: (id: string) => fetchJSON<MigrationJob>(`/migrations/${id}`),
+    cancel: (id: string) => fetchJSON<void>(`/migrations/${id}/cancel`, { method: 'POST' }),
+  },
+
+  // Config
+  config: {
+    info: () => fetchJSON<ConfigInfo>('/config'),
+    enrollmentToken: () => fetchJSON<{ enrollment_token: string }>('/enrollment-token'),
   },
 
   // Pairing

@@ -95,6 +95,14 @@ enum ResourceType {
   NETWORKS = 4;
 }
 
+// TransferMode enum - how data is transferred between workers
+enum TransferMode {
+  TRANSFER_MODE_UNSPECIFIED = 0;
+  TRANSFER_MODE_DIRECT = 1;   // Workers connect directly to each other
+  TRANSFER_MODE_PROXY = 2;    // Data flows through master as relay
+  TRANSFER_MODE_AUTO = 3;     // Auto-detect based on connectivity
+}
+
 // ResourceList returns available resources
 message ResourceList {
   repeated ContainerResource containers = 1;
@@ -292,6 +300,8 @@ message MigrationRequest {
   repeated string network_ids = 8;
   MigrationMode mode = 9;
   MigrationStrategy strategy = 10;
+  TransferMode transfer_mode = 11;  // How to transfer data
+  string proxy_address = 12;        // Master's proxy address (for proxy mode)
 }
 
 // MigrationResponse acknowledges migration request
@@ -311,6 +321,8 @@ message AcceptMigrationRequest {
   repeated string image_ids = 6;
   repeated string volume_names = 7;
   repeated string network_ids = 8;
+  TransferMode transfer_mode = 9;   // How to transfer data
+  string proxy_address = 10;        // Master's proxy address (for proxy mode)
 }
 
 // AcceptMigrationResponse confirms worker is ready to receive
@@ -334,6 +346,7 @@ message StartMigrationCommand {
   MigrationRole role = 1;
   MigrationRequest request = 2;
   AcceptMigrationRequest accept_request = 3;
+  TransferMode transfer_mode = 4;  // Transfer mode for this migration
 }
 
 // CancelMigrationCommand sent via stream
@@ -429,4 +442,60 @@ enum MigrationPhase {
   MIGRATION_PHASE_COMPLETE = 7;
   MIGRATION_PHASE_FAILED = 8;
   MIGRATION_PHASE_CANCELLED = 9;
+}
+
+// ============================================================================
+// Proxy Service - Master relays data between workers
+// ============================================================================
+
+// ProxyService allows master to relay data between workers that cannot
+// directly connect to each other (e.g., behind NAT/firewalls)
+service ProxyService {
+  // OpenProxyChannel opens a bidirectional stream for relaying migration data
+  rpc OpenProxyChannel(stream ProxyData) returns (stream ProxyData);
+}
+
+// ProxyData is the message exchanged over the proxy channel
+message ProxyData {
+  string migration_id = 1;
+  string worker_id = 2;
+  ProxyDataType type = 3;
+
+  oneof payload {
+    VolumeChunk volume_chunk = 4;
+    LayerBlob layer_blob = 5;
+    ContainerChunk container_chunk = 6;
+    TransferAck ack = 7;
+    ProxyHandshake handshake = 8;
+    ProxyClose close = 9;
+  }
+}
+
+// ProxyDataType identifies the type of proxy data
+enum ProxyDataType {
+  PROXY_DATA_HANDSHAKE = 0;
+  PROXY_DATA_VOLUME = 1;
+  PROXY_DATA_IMAGE = 2;
+  PROXY_DATA_CONTAINER = 3;
+  PROXY_DATA_ACK = 4;
+  PROXY_DATA_CLOSE = 5;
+}
+
+// ProxyHandshake is sent when a worker connects to establish the proxy channel
+message ProxyHandshake {
+  ProxyRole role = 1;
+  string target_worker_id = 2;  // For source: which worker to relay to
+  string auth_token = 3;        // Worker's auth token for verification
+}
+
+// ProxyRole identifies whether the worker is source or target in proxy mode
+enum ProxyRole {
+  PROXY_ROLE_SOURCE = 0;
+  PROXY_ROLE_TARGET = 1;
+}
+
+// ProxyClose signals the end of the proxy session
+message ProxyClose {
+  bool success = 1;
+  string error = 2;
 }

@@ -77,6 +77,59 @@ func (ResourceType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_migrate_proto_rawDescGZIP(), []int{0}
 }
 
+// TransferMode enum - how data is transferred between workers
+type TransferMode int32
+
+const (
+	TransferMode_TRANSFER_MODE_UNSPECIFIED TransferMode = 0
+	TransferMode_TRANSFER_MODE_DIRECT      TransferMode = 1 // Workers connect directly to each other
+	TransferMode_TRANSFER_MODE_PROXY       TransferMode = 2 // Data flows through master as relay
+	TransferMode_TRANSFER_MODE_AUTO        TransferMode = 3 // Auto-detect based on connectivity
+)
+
+// Enum value maps for TransferMode.
+var (
+	TransferMode_name = map[int32]string{
+		0: "TRANSFER_MODE_UNSPECIFIED",
+		1: "TRANSFER_MODE_DIRECT",
+		2: "TRANSFER_MODE_PROXY",
+		3: "TRANSFER_MODE_AUTO",
+	}
+	TransferMode_value = map[string]int32{
+		"TRANSFER_MODE_UNSPECIFIED": 0,
+		"TRANSFER_MODE_DIRECT":      1,
+		"TRANSFER_MODE_PROXY":       2,
+		"TRANSFER_MODE_AUTO":        3,
+	}
+)
+
+func (x TransferMode) Enum() *TransferMode {
+	p := new(TransferMode)
+	*p = x
+	return p
+}
+
+func (x TransferMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TransferMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_migrate_proto_enumTypes[1].Descriptor()
+}
+
+func (TransferMode) Type() protoreflect.EnumType {
+	return &file_proto_migrate_proto_enumTypes[1]
+}
+
+func (x TransferMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TransferMode.Descriptor instead.
+func (TransferMode) EnumDescriptor() ([]byte, []int) {
+	return file_proto_migrate_proto_rawDescGZIP(), []int{1}
+}
+
 // WorkerStatus enum
 type WorkerStatus int32
 
@@ -117,11 +170,11 @@ func (x WorkerStatus) String() string {
 }
 
 func (WorkerStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_migrate_proto_enumTypes[1].Descriptor()
+	return file_proto_migrate_proto_enumTypes[2].Descriptor()
 }
 
 func (WorkerStatus) Type() protoreflect.EnumType {
-	return &file_proto_migrate_proto_enumTypes[1]
+	return &file_proto_migrate_proto_enumTypes[2]
 }
 
 func (x WorkerStatus) Number() protoreflect.EnumNumber {
@@ -130,7 +183,7 @@ func (x WorkerStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use WorkerStatus.Descriptor instead.
 func (WorkerStatus) EnumDescriptor() ([]byte, []int) {
-	return file_proto_migrate_proto_rawDescGZIP(), []int{1}
+	return file_proto_migrate_proto_rawDescGZIP(), []int{2}
 }
 
 // MigrationRole indicates worker's role in migration
@@ -167,11 +220,11 @@ func (x MigrationRole) String() string {
 }
 
 func (MigrationRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_migrate_proto_enumTypes[2].Descriptor()
+	return file_proto_migrate_proto_enumTypes[3].Descriptor()
 }
 
 func (MigrationRole) Type() protoreflect.EnumType {
-	return &file_proto_migrate_proto_enumTypes[2]
+	return &file_proto_migrate_proto_enumTypes[3]
 }
 
 func (x MigrationRole) Number() protoreflect.EnumNumber {
@@ -180,7 +233,7 @@ func (x MigrationRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MigrationRole.Descriptor instead.
 func (MigrationRole) EnumDescriptor() ([]byte, []int) {
-	return file_proto_migrate_proto_rawDescGZIP(), []int{2}
+	return file_proto_migrate_proto_rawDescGZIP(), []int{3}
 }
 
 // MigrationMode enum
@@ -217,11 +270,11 @@ func (x MigrationMode) String() string {
 }
 
 func (MigrationMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_migrate_proto_enumTypes[3].Descriptor()
+	return file_proto_migrate_proto_enumTypes[4].Descriptor()
 }
 
 func (MigrationMode) Type() protoreflect.EnumType {
-	return &file_proto_migrate_proto_enumTypes[3]
+	return &file_proto_migrate_proto_enumTypes[4]
 }
 
 func (x MigrationMode) Number() protoreflect.EnumNumber {
@@ -230,7 +283,7 @@ func (x MigrationMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MigrationMode.Descriptor instead.
 func (MigrationMode) EnumDescriptor() ([]byte, []int) {
-	return file_proto_migrate_proto_rawDescGZIP(), []int{3}
+	return file_proto_migrate_proto_rawDescGZIP(), []int{4}
 }
 
 // MigrationStrategy enum
@@ -267,11 +320,11 @@ func (x MigrationStrategy) String() string {
 }
 
 func (MigrationStrategy) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_migrate_proto_enumTypes[4].Descriptor()
+	return file_proto_migrate_proto_enumTypes[5].Descriptor()
 }
 
 func (MigrationStrategy) Type() protoreflect.EnumType {
-	return &file_proto_migrate_proto_enumTypes[4]
+	return &file_proto_migrate_proto_enumTypes[5]
 }
 
 func (x MigrationStrategy) Number() protoreflect.EnumNumber {
@@ -280,7 +333,7 @@ func (x MigrationStrategy) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MigrationStrategy.Descriptor instead.
 func (MigrationStrategy) EnumDescriptor() ([]byte, []int) {
-	return file_proto_migrate_proto_rawDescGZIP(), []int{4}
+	return file_proto_migrate_proto_rawDescGZIP(), []int{5}
 }
 
 // MigrationPhase enum
@@ -338,11 +391,11 @@ func (x MigrationPhase) String() string {
 }
 
 func (MigrationPhase) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_migrate_proto_enumTypes[5].Descriptor()
+	return file_proto_migrate_proto_enumTypes[6].Descriptor()
 }
 
 func (MigrationPhase) Type() protoreflect.EnumType {
-	return &file_proto_migrate_proto_enumTypes[5]
+	return &file_proto_migrate_proto_enumTypes[6]
 }
 
 func (x MigrationPhase) Number() protoreflect.EnumNumber {
@@ -351,7 +404,113 @@ func (x MigrationPhase) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MigrationPhase.Descriptor instead.
 func (MigrationPhase) EnumDescriptor() ([]byte, []int) {
-	return file_proto_migrate_proto_rawDescGZIP(), []int{5}
+	return file_proto_migrate_proto_rawDescGZIP(), []int{6}
+}
+
+// ProxyDataType identifies the type of proxy data
+type ProxyDataType int32
+
+const (
+	ProxyDataType_PROXY_DATA_HANDSHAKE ProxyDataType = 0
+	ProxyDataType_PROXY_DATA_VOLUME    ProxyDataType = 1
+	ProxyDataType_PROXY_DATA_IMAGE     ProxyDataType = 2
+	ProxyDataType_PROXY_DATA_CONTAINER ProxyDataType = 3
+	ProxyDataType_PROXY_DATA_ACK       ProxyDataType = 4
+	ProxyDataType_PROXY_DATA_CLOSE     ProxyDataType = 5
+)
+
+// Enum value maps for ProxyDataType.
+var (
+	ProxyDataType_name = map[int32]string{
+		0: "PROXY_DATA_HANDSHAKE",
+		1: "PROXY_DATA_VOLUME",
+		2: "PROXY_DATA_IMAGE",
+		3: "PROXY_DATA_CONTAINER",
+		4: "PROXY_DATA_ACK",
+		5: "PROXY_DATA_CLOSE",
+	}
+	ProxyDataType_value = map[string]int32{
+		"PROXY_DATA_HANDSHAKE": 0,
+		"PROXY_DATA_VOLUME":    1,
+		"PROXY_DATA_IMAGE":     2,
+		"PROXY_DATA_CONTAINER": 3,
+		"PROXY_DATA_ACK":       4,
+		"PROXY_DATA_CLOSE":     5,
+	}
+)
+
+func (x ProxyDataType) Enum() *ProxyDataType {
+	p := new(ProxyDataType)
+	*p = x
+	return p
+}
+
+func (x ProxyDataType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ProxyDataType) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_migrate_proto_enumTypes[7].Descriptor()
+}
+
+func (ProxyDataType) Type() protoreflect.EnumType {
+	return &file_proto_migrate_proto_enumTypes[7]
+}
+
+func (x ProxyDataType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ProxyDataType.Descriptor instead.
+func (ProxyDataType) EnumDescriptor() ([]byte, []int) {
+	return file_proto_migrate_proto_rawDescGZIP(), []int{7}
+}
+
+// ProxyRole identifies whether the worker is source or target in proxy mode
+type ProxyRole int32
+
+const (
+	ProxyRole_PROXY_ROLE_SOURCE ProxyRole = 0
+	ProxyRole_PROXY_ROLE_TARGET ProxyRole = 1
+)
+
+// Enum value maps for ProxyRole.
+var (
+	ProxyRole_name = map[int32]string{
+		0: "PROXY_ROLE_SOURCE",
+		1: "PROXY_ROLE_TARGET",
+	}
+	ProxyRole_value = map[string]int32{
+		"PROXY_ROLE_SOURCE": 0,
+		"PROXY_ROLE_TARGET": 1,
+	}
+)
+
+func (x ProxyRole) Enum() *ProxyRole {
+	p := new(ProxyRole)
+	*p = x
+	return p
+}
+
+func (x ProxyRole) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ProxyRole) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_migrate_proto_enumTypes[8].Descriptor()
+}
+
+func (ProxyRole) Type() protoreflect.EnumType {
+	return &file_proto_migrate_proto_enumTypes[8]
+}
+
+func (x ProxyRole) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ProxyRole.Descriptor instead.
+func (ProxyRole) EnumDescriptor() ([]byte, []int) {
+	return file_proto_migrate_proto_rawDescGZIP(), []int{8}
 }
 
 // VolumeChunk represents a chunk of volume data
@@ -2190,6 +2349,8 @@ type MigrationRequest struct {
 	NetworkIds        []string               `protobuf:"bytes,8,rep,name=network_ids,json=networkIds,proto3" json:"network_ids,omitempty"`
 	Mode              MigrationMode          `protobuf:"varint,9,opt,name=mode,proto3,enum=migrate.MigrationMode" json:"mode,omitempty"`
 	Strategy          MigrationStrategy      `protobuf:"varint,10,opt,name=strategy,proto3,enum=migrate.MigrationStrategy" json:"strategy,omitempty"`
+	TransferMode      TransferMode           `protobuf:"varint,11,opt,name=transfer_mode,json=transferMode,proto3,enum=migrate.TransferMode" json:"transfer_mode,omitempty"` // How to transfer data
+	ProxyAddress      string                 `protobuf:"bytes,12,opt,name=proxy_address,json=proxyAddress,proto3" json:"proxy_address,omitempty"`                            // Master's proxy address (for proxy mode)
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -2294,6 +2455,20 @@ func (x *MigrationRequest) GetStrategy() MigrationStrategy {
 	return MigrationStrategy_MIGRATION_STRATEGY_FULL
 }
 
+func (x *MigrationRequest) GetTransferMode() TransferMode {
+	if x != nil {
+		return x.TransferMode
+	}
+	return TransferMode_TRANSFER_MODE_UNSPECIFIED
+}
+
+func (x *MigrationRequest) GetProxyAddress() string {
+	if x != nil {
+		return x.ProxyAddress
+	}
+	return ""
+}
+
 // MigrationResponse acknowledges migration request
 type MigrationResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -2366,6 +2541,8 @@ type AcceptMigrationRequest struct {
 	ImageIds          []string               `protobuf:"bytes,6,rep,name=image_ids,json=imageIds,proto3" json:"image_ids,omitempty"`
 	VolumeNames       []string               `protobuf:"bytes,7,rep,name=volume_names,json=volumeNames,proto3" json:"volume_names,omitempty"`
 	NetworkIds        []string               `protobuf:"bytes,8,rep,name=network_ids,json=networkIds,proto3" json:"network_ids,omitempty"`
+	TransferMode      TransferMode           `protobuf:"varint,9,opt,name=transfer_mode,json=transferMode,proto3,enum=migrate.TransferMode" json:"transfer_mode,omitempty"` // How to transfer data
+	ProxyAddress      string                 `protobuf:"bytes,10,opt,name=proxy_address,json=proxyAddress,proto3" json:"proxy_address,omitempty"`                           // Master's proxy address (for proxy mode)
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -2454,6 +2631,20 @@ func (x *AcceptMigrationRequest) GetNetworkIds() []string {
 		return x.NetworkIds
 	}
 	return nil
+}
+
+func (x *AcceptMigrationRequest) GetTransferMode() TransferMode {
+	if x != nil {
+		return x.TransferMode
+	}
+	return TransferMode_TRANSFER_MODE_UNSPECIFIED
+}
+
+func (x *AcceptMigrationRequest) GetProxyAddress() string {
+	if x != nil {
+		return x.ProxyAddress
+	}
+	return ""
 }
 
 // AcceptMigrationResponse confirms worker is ready to receive
@@ -2600,6 +2791,7 @@ type StartMigrationCommand struct {
 	Role          MigrationRole           `protobuf:"varint,1,opt,name=role,proto3,enum=migrate.MigrationRole" json:"role,omitempty"`
 	Request       *MigrationRequest       `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
 	AcceptRequest *AcceptMigrationRequest `protobuf:"bytes,3,opt,name=accept_request,json=acceptRequest,proto3" json:"accept_request,omitempty"`
+	TransferMode  TransferMode            `protobuf:"varint,4,opt,name=transfer_mode,json=transferMode,proto3,enum=migrate.TransferMode" json:"transfer_mode,omitempty"` // Transfer mode for this migration
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2653,6 +2845,13 @@ func (x *StartMigrationCommand) GetAcceptRequest() *AcceptMigrationRequest {
 		return x.AcceptRequest
 	}
 	return nil
+}
+
+func (x *StartMigrationCommand) GetTransferMode() TransferMode {
+	if x != nil {
+		return x.TransferMode
+	}
+	return TransferMode_TRANSFER_MODE_UNSPECIFIED
 }
 
 // CancelMigrationCommand sent via stream
@@ -3175,6 +3374,291 @@ func (x *WorkerError) GetFatal() bool {
 	return false
 }
 
+// ProxyData is the message exchanged over the proxy channel
+type ProxyData struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	MigrationId string                 `protobuf:"bytes,1,opt,name=migration_id,json=migrationId,proto3" json:"migration_id,omitempty"`
+	WorkerId    string                 `protobuf:"bytes,2,opt,name=worker_id,json=workerId,proto3" json:"worker_id,omitempty"`
+	Type        ProxyDataType          `protobuf:"varint,3,opt,name=type,proto3,enum=migrate.ProxyDataType" json:"type,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*ProxyData_VolumeChunk
+	//	*ProxyData_LayerBlob
+	//	*ProxyData_ContainerChunk
+	//	*ProxyData_Ack
+	//	*ProxyData_Handshake
+	//	*ProxyData_Close
+	Payload       isProxyData_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProxyData) Reset() {
+	*x = ProxyData{}
+	mi := &file_proto_migrate_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProxyData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProxyData) ProtoMessage() {}
+
+func (x *ProxyData) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_migrate_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProxyData.ProtoReflect.Descriptor instead.
+func (*ProxyData) Descriptor() ([]byte, []int) {
+	return file_proto_migrate_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *ProxyData) GetMigrationId() string {
+	if x != nil {
+		return x.MigrationId
+	}
+	return ""
+}
+
+func (x *ProxyData) GetWorkerId() string {
+	if x != nil {
+		return x.WorkerId
+	}
+	return ""
+}
+
+func (x *ProxyData) GetType() ProxyDataType {
+	if x != nil {
+		return x.Type
+	}
+	return ProxyDataType_PROXY_DATA_HANDSHAKE
+}
+
+func (x *ProxyData) GetPayload() isProxyData_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *ProxyData) GetVolumeChunk() *VolumeChunk {
+	if x != nil {
+		if x, ok := x.Payload.(*ProxyData_VolumeChunk); ok {
+			return x.VolumeChunk
+		}
+	}
+	return nil
+}
+
+func (x *ProxyData) GetLayerBlob() *LayerBlob {
+	if x != nil {
+		if x, ok := x.Payload.(*ProxyData_LayerBlob); ok {
+			return x.LayerBlob
+		}
+	}
+	return nil
+}
+
+func (x *ProxyData) GetContainerChunk() *ContainerChunk {
+	if x != nil {
+		if x, ok := x.Payload.(*ProxyData_ContainerChunk); ok {
+			return x.ContainerChunk
+		}
+	}
+	return nil
+}
+
+func (x *ProxyData) GetAck() *TransferAck {
+	if x != nil {
+		if x, ok := x.Payload.(*ProxyData_Ack); ok {
+			return x.Ack
+		}
+	}
+	return nil
+}
+
+func (x *ProxyData) GetHandshake() *ProxyHandshake {
+	if x != nil {
+		if x, ok := x.Payload.(*ProxyData_Handshake); ok {
+			return x.Handshake
+		}
+	}
+	return nil
+}
+
+func (x *ProxyData) GetClose() *ProxyClose {
+	if x != nil {
+		if x, ok := x.Payload.(*ProxyData_Close); ok {
+			return x.Close
+		}
+	}
+	return nil
+}
+
+type isProxyData_Payload interface {
+	isProxyData_Payload()
+}
+
+type ProxyData_VolumeChunk struct {
+	VolumeChunk *VolumeChunk `protobuf:"bytes,4,opt,name=volume_chunk,json=volumeChunk,proto3,oneof"`
+}
+
+type ProxyData_LayerBlob struct {
+	LayerBlob *LayerBlob `protobuf:"bytes,5,opt,name=layer_blob,json=layerBlob,proto3,oneof"`
+}
+
+type ProxyData_ContainerChunk struct {
+	ContainerChunk *ContainerChunk `protobuf:"bytes,6,opt,name=container_chunk,json=containerChunk,proto3,oneof"`
+}
+
+type ProxyData_Ack struct {
+	Ack *TransferAck `protobuf:"bytes,7,opt,name=ack,proto3,oneof"`
+}
+
+type ProxyData_Handshake struct {
+	Handshake *ProxyHandshake `protobuf:"bytes,8,opt,name=handshake,proto3,oneof"`
+}
+
+type ProxyData_Close struct {
+	Close *ProxyClose `protobuf:"bytes,9,opt,name=close,proto3,oneof"`
+}
+
+func (*ProxyData_VolumeChunk) isProxyData_Payload() {}
+
+func (*ProxyData_LayerBlob) isProxyData_Payload() {}
+
+func (*ProxyData_ContainerChunk) isProxyData_Payload() {}
+
+func (*ProxyData_Ack) isProxyData_Payload() {}
+
+func (*ProxyData_Handshake) isProxyData_Payload() {}
+
+func (*ProxyData_Close) isProxyData_Payload() {}
+
+// ProxyHandshake is sent when a worker connects to establish the proxy channel
+type ProxyHandshake struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Role           ProxyRole              `protobuf:"varint,1,opt,name=role,proto3,enum=migrate.ProxyRole" json:"role,omitempty"`
+	TargetWorkerId string                 `protobuf:"bytes,2,opt,name=target_worker_id,json=targetWorkerId,proto3" json:"target_worker_id,omitempty"` // For source: which worker to relay to
+	AuthToken      string                 `protobuf:"bytes,3,opt,name=auth_token,json=authToken,proto3" json:"auth_token,omitempty"`                  // Worker's auth token for verification
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ProxyHandshake) Reset() {
+	*x = ProxyHandshake{}
+	mi := &file_proto_migrate_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProxyHandshake) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProxyHandshake) ProtoMessage() {}
+
+func (x *ProxyHandshake) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_migrate_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProxyHandshake.ProtoReflect.Descriptor instead.
+func (*ProxyHandshake) Descriptor() ([]byte, []int) {
+	return file_proto_migrate_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *ProxyHandshake) GetRole() ProxyRole {
+	if x != nil {
+		return x.Role
+	}
+	return ProxyRole_PROXY_ROLE_SOURCE
+}
+
+func (x *ProxyHandshake) GetTargetWorkerId() string {
+	if x != nil {
+		return x.TargetWorkerId
+	}
+	return ""
+}
+
+func (x *ProxyHandshake) GetAuthToken() string {
+	if x != nil {
+		return x.AuthToken
+	}
+	return ""
+}
+
+// ProxyClose signals the end of the proxy session
+type ProxyClose struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProxyClose) Reset() {
+	*x = ProxyClose{}
+	mi := &file_proto_migrate_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProxyClose) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProxyClose) ProtoMessage() {}
+
+func (x *ProxyClose) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_migrate_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProxyClose.ProtoReflect.Descriptor instead.
+func (*ProxyClose) Descriptor() ([]byte, []int) {
+	return file_proto_migrate_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *ProxyClose) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ProxyClose) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 var File_proto_migrate_proto protoreflect.FileDescriptor
 
 const file_proto_migrate_proto_rawDesc = "" +
@@ -3343,7 +3827,7 @@ const file_proto_migrate_proto_rawDesc = "" +
 	"\bnetworks\x18\a \x03(\v2\x18.migrate.NetworkResourceR\bnetworks\"=\n" +
 	"\vAckResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\x9f\x03\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x80\x04\n" +
 	"\x10MigrationRequest\x12!\n" +
 	"\fmigration_id\x18\x01 \x01(\tR\vmigrationId\x12(\n" +
 	"\x10target_worker_id\x18\x02 \x01(\tR\x0etargetWorkerId\x12%\n" +
@@ -3356,11 +3840,13 @@ const file_proto_migrate_proto_rawDesc = "" +
 	"networkIds\x12*\n" +
 	"\x04mode\x18\t \x01(\x0e2\x16.migrate.MigrationModeR\x04mode\x126\n" +
 	"\bstrategy\x18\n" +
-	" \x01(\x0e2\x1a.migrate.MigrationStrategyR\bstrategy\"h\n" +
+	" \x01(\x0e2\x1a.migrate.MigrationStrategyR\bstrategy\x12:\n" +
+	"\rtransfer_mode\x18\v \x01(\x0e2\x15.migrate.TransferModeR\ftransferMode\x12#\n" +
+	"\rproxy_address\x18\f \x01(\tR\fproxyAddress\"h\n" +
 	"\x11MigrationResponse\x12\x1a\n" +
 	"\baccepted\x18\x01 \x01(\bR\baccepted\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12!\n" +
-	"\fmigration_id\x18\x03 \x01(\tR\vmigrationId\"\xc1\x02\n" +
+	"\fmigration_id\x18\x03 \x01(\tR\vmigrationId\"\xa2\x03\n" +
 	"\x16AcceptMigrationRequest\x12!\n" +
 	"\fmigration_id\x18\x01 \x01(\tR\vmigrationId\x12(\n" +
 	"\x10source_worker_id\x18\x02 \x01(\tR\x0esourceWorkerId\x12%\n" +
@@ -3370,7 +3856,10 @@ const file_proto_migrate_proto_rawDesc = "" +
 	"\timage_ids\x18\x06 \x03(\tR\bimageIds\x12!\n" +
 	"\fvolume_names\x18\a \x03(\tR\vvolumeNames\x12\x1f\n" +
 	"\vnetwork_ids\x18\b \x03(\tR\n" +
-	"networkIds\"t\n" +
+	"networkIds\x12:\n" +
+	"\rtransfer_mode\x18\t \x01(\x0e2\x15.migrate.TransferModeR\ftransferMode\x12#\n" +
+	"\rproxy_address\x18\n" +
+	" \x01(\tR\fproxyAddress\"t\n" +
 	"\x17AcceptMigrationResponse\x12\x1a\n" +
 	"\baccepted\x18\x01 \x01(\bR\baccepted\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12'\n" +
@@ -3383,11 +3872,12 @@ const file_proto_migrate_proto_rawDesc = "" +
 	"\x06checks\x18\x05 \x03(\v2#.migrate.HealthResponse.ChecksEntryR\x06checks\x1a9\n" +
 	"\vChecksEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc0\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xfc\x01\n" +
 	"\x15StartMigrationCommand\x12*\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x16.migrate.MigrationRoleR\x04role\x123\n" +
 	"\arequest\x18\x02 \x01(\v2\x19.migrate.MigrationRequestR\arequest\x12F\n" +
-	"\x0eaccept_request\x18\x03 \x01(\v2\x1f.migrate.AcceptMigrationRequestR\racceptRequest\"S\n" +
+	"\x0eaccept_request\x18\x03 \x01(\v2\x1f.migrate.AcceptMigrationRequestR\racceptRequest\x12:\n" +
+	"\rtransfer_mode\x18\x04 \x01(\x0e2\x15.migrate.TransferModeR\ftransferMode\"S\n" +
 	"\x16CancelMigrationCommand\x12!\n" +
 	"\fmigration_id\x18\x01 \x01(\tR\vmigrationId\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\"S\n" +
@@ -3429,7 +3919,28 @@ const file_proto_migrate_proto_rawDesc = "" +
 	"error_code\x18\x01 \x01(\tR\terrorCode\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x18\n" +
 	"\adetails\x18\x03 \x01(\tR\adetails\x12\x14\n" +
-	"\x05fatal\x18\x04 \x01(\bR\x05fatal*N\n" +
+	"\x05fatal\x18\x04 \x01(\bR\x05fatal\"\xc6\x03\n" +
+	"\tProxyData\x12!\n" +
+	"\fmigration_id\x18\x01 \x01(\tR\vmigrationId\x12\x1b\n" +
+	"\tworker_id\x18\x02 \x01(\tR\bworkerId\x12*\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x16.migrate.ProxyDataTypeR\x04type\x129\n" +
+	"\fvolume_chunk\x18\x04 \x01(\v2\x14.migrate.VolumeChunkH\x00R\vvolumeChunk\x123\n" +
+	"\n" +
+	"layer_blob\x18\x05 \x01(\v2\x12.migrate.LayerBlobH\x00R\tlayerBlob\x12B\n" +
+	"\x0fcontainer_chunk\x18\x06 \x01(\v2\x17.migrate.ContainerChunkH\x00R\x0econtainerChunk\x12(\n" +
+	"\x03ack\x18\a \x01(\v2\x14.migrate.TransferAckH\x00R\x03ack\x127\n" +
+	"\thandshake\x18\b \x01(\v2\x17.migrate.ProxyHandshakeH\x00R\thandshake\x12+\n" +
+	"\x05close\x18\t \x01(\v2\x13.migrate.ProxyCloseH\x00R\x05closeB\t\n" +
+	"\apayload\"\x81\x01\n" +
+	"\x0eProxyHandshake\x12&\n" +
+	"\x04role\x18\x01 \x01(\x0e2\x12.migrate.ProxyRoleR\x04role\x12(\n" +
+	"\x10target_worker_id\x18\x02 \x01(\tR\x0etargetWorkerId\x12\x1d\n" +
+	"\n" +
+	"auth_token\x18\x03 \x01(\tR\tauthToken\"<\n" +
+	"\n" +
+	"ProxyClose\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error*N\n" +
 	"\fResourceType\x12\a\n" +
 	"\x03ALL\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -3437,7 +3948,12 @@ const file_proto_migrate_proto_rawDesc = "" +
 	"\n" +
 	"\x06IMAGES\x10\x02\x12\v\n" +
 	"\aVOLUMES\x10\x03\x12\f\n" +
-	"\bNETWORKS\x10\x04*\x8e\x01\n" +
+	"\bNETWORKS\x10\x04*x\n" +
+	"\fTransferMode\x12\x1d\n" +
+	"\x19TRANSFER_MODE_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14TRANSFER_MODE_DIRECT\x10\x01\x12\x17\n" +
+	"\x13TRANSFER_MODE_PROXY\x10\x02\x12\x16\n" +
+	"\x12TRANSFER_MODE_AUTO\x10\x03*\x8e\x01\n" +
 	"\fWorkerStatus\x12\x19\n" +
 	"\x15WORKER_STATUS_UNKNOWN\x10\x00\x12\x16\n" +
 	"\x12WORKER_STATUS_IDLE\x10\x01\x12\x16\n" +
@@ -3466,7 +3982,17 @@ const file_proto_migrate_proto_rawDesc = "" +
 	"\x1aMIGRATION_PHASE_FINALIZING\x10\x06\x12\x1c\n" +
 	"\x18MIGRATION_PHASE_COMPLETE\x10\a\x12\x1a\n" +
 	"\x16MIGRATION_PHASE_FAILED\x10\b\x12\x1d\n" +
-	"\x19MIGRATION_PHASE_CANCELLED\x10\t2\x90\x03\n" +
+	"\x19MIGRATION_PHASE_CANCELLED\x10\t*\x9a\x01\n" +
+	"\rProxyDataType\x12\x18\n" +
+	"\x14PROXY_DATA_HANDSHAKE\x10\x00\x12\x15\n" +
+	"\x11PROXY_DATA_VOLUME\x10\x01\x12\x14\n" +
+	"\x10PROXY_DATA_IMAGE\x10\x02\x12\x18\n" +
+	"\x14PROXY_DATA_CONTAINER\x10\x03\x12\x12\n" +
+	"\x0ePROXY_DATA_ACK\x10\x04\x12\x14\n" +
+	"\x10PROXY_DATA_CLOSE\x10\x05*9\n" +
+	"\tProxyRole\x12\x15\n" +
+	"\x11PROXY_ROLE_SOURCE\x10\x00\x12\x15\n" +
+	"\x11PROXY_ROLE_TARGET\x10\x012\x90\x03\n" +
 	"\x10MigrationService\x12@\n" +
 	"\x0eTransferVolume\x12\x14.migrate.VolumeChunk\x1a\x14.migrate.TransferAck(\x010\x01\x12C\n" +
 	"\x13TransferImageLayers\x12\x12.migrate.LayerBlob\x1a\x14.migrate.TransferAck(\x010\x01\x12B\n" +
@@ -3482,7 +4008,9 @@ const file_proto_migrate_proto_rawDesc = "" +
 	"\x11InitiateMigration\x12\x19.migrate.MigrationRequest\x1a\x1a.migrate.MigrationResponse\x12T\n" +
 	"\x0fAcceptMigration\x12\x1f.migrate.AcceptMigrationRequest\x1a .migrate.AcceptMigrationResponse\x126\n" +
 	"\vHealthCheck\x12\x0e.migrate.Empty\x1a\x17.migrate.HealthResponse\x12T\n" +
-	"\x0fCancelMigration\x12\x1f.migrate.CancelMigrationRequest\x1a .migrate.CancelMigrationResponseB1Z/github.com/artemis/docker-migrate/proto;migrateb\x06proto3"
+	"\x0fCancelMigration\x12\x1f.migrate.CancelMigrationRequest\x1a .migrate.CancelMigrationResponse2N\n" +
+	"\fProxyService\x12>\n" +
+	"\x10OpenProxyChannel\x12\x12.migrate.ProxyData\x1a\x12.migrate.ProxyData(\x010\x01B1Z/github.com/artemis/docker-migrate/proto;migrateb\x06proto3"
 
 var (
 	file_proto_migrate_proto_rawDescOnce sync.Once
@@ -3496,122 +4024,141 @@ func file_proto_migrate_proto_rawDescGZIP() []byte {
 	return file_proto_migrate_proto_rawDescData
 }
 
-var file_proto_migrate_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_proto_migrate_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_proto_migrate_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
+var file_proto_migrate_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
 var file_proto_migrate_proto_goTypes = []any{
 	(ResourceType)(0),               // 0: migrate.ResourceType
-	(WorkerStatus)(0),               // 1: migrate.WorkerStatus
-	(MigrationRole)(0),              // 2: migrate.MigrationRole
-	(MigrationMode)(0),              // 3: migrate.MigrationMode
-	(MigrationStrategy)(0),          // 4: migrate.MigrationStrategy
-	(MigrationPhase)(0),             // 5: migrate.MigrationPhase
-	(*VolumeChunk)(nil),             // 6: migrate.VolumeChunk
-	(*LayerBlob)(nil),               // 7: migrate.LayerBlob
-	(*ContainerChunk)(nil),          // 8: migrate.ContainerChunk
-	(*NetworkConfig)(nil),           // 9: migrate.NetworkConfig
-	(*TransferAck)(nil),             // 10: migrate.TransferAck
-	(*TransferResult)(nil),          // 11: migrate.TransferResult
-	(*ResourceRequest)(nil),         // 12: migrate.ResourceRequest
-	(*ResourceList)(nil),            // 13: migrate.ResourceList
-	(*ContainerResource)(nil),       // 14: migrate.ContainerResource
-	(*ImageResource)(nil),           // 15: migrate.ImageResource
-	(*VolumeResource)(nil),          // 16: migrate.VolumeResource
-	(*NetworkResource)(nil),         // 17: migrate.NetworkResource
-	(*Empty)(nil),                   // 18: migrate.Empty
-	(*Pong)(nil),                    // 19: migrate.Pong
-	(*WorkerRegistration)(nil),      // 20: migrate.WorkerRegistration
-	(*RegistrationResponse)(nil),    // 21: migrate.RegistrationResponse
-	(*WorkerMessage)(nil),           // 22: migrate.WorkerMessage
-	(*MasterCommand)(nil),           // 23: migrate.MasterCommand
-	(*Heartbeat)(nil),               // 24: migrate.Heartbeat
-	(*HeartbeatAck)(nil),            // 25: migrate.HeartbeatAck
-	(*SystemResources)(nil),         // 26: migrate.SystemResources
-	(*ResourceInventory)(nil),       // 27: migrate.ResourceInventory
-	(*AckResponse)(nil),             // 28: migrate.AckResponse
-	(*MigrationRequest)(nil),        // 29: migrate.MigrationRequest
-	(*MigrationResponse)(nil),       // 30: migrate.MigrationResponse
-	(*AcceptMigrationRequest)(nil),  // 31: migrate.AcceptMigrationRequest
-	(*AcceptMigrationResponse)(nil), // 32: migrate.AcceptMigrationResponse
-	(*HealthResponse)(nil),          // 33: migrate.HealthResponse
-	(*StartMigrationCommand)(nil),   // 34: migrate.StartMigrationCommand
-	(*CancelMigrationCommand)(nil),  // 35: migrate.CancelMigrationCommand
-	(*CancelMigrationRequest)(nil),  // 36: migrate.CancelMigrationRequest
-	(*CancelMigrationResponse)(nil), // 37: migrate.CancelMigrationResponse
-	(*UpdateConfigCommand)(nil),     // 38: migrate.UpdateConfigCommand
-	(*ShutdownCommand)(nil),         // 39: migrate.ShutdownCommand
-	(*MigrationProgress)(nil),       // 40: migrate.MigrationProgress
-	(*MigrationComplete)(nil),       // 41: migrate.MigrationComplete
-	(*WorkerError)(nil),             // 42: migrate.WorkerError
-	nil,                             // 43: migrate.ContainerResource.LabelsEntry
-	nil,                             // 44: migrate.VolumeResource.LabelsEntry
-	nil,                             // 45: migrate.WorkerRegistration.LabelsEntry
-	nil,                             // 46: migrate.HealthResponse.ChecksEntry
-	nil,                             // 47: migrate.UpdateConfigCommand.LabelsEntry
+	(TransferMode)(0),               // 1: migrate.TransferMode
+	(WorkerStatus)(0),               // 2: migrate.WorkerStatus
+	(MigrationRole)(0),              // 3: migrate.MigrationRole
+	(MigrationMode)(0),              // 4: migrate.MigrationMode
+	(MigrationStrategy)(0),          // 5: migrate.MigrationStrategy
+	(MigrationPhase)(0),             // 6: migrate.MigrationPhase
+	(ProxyDataType)(0),              // 7: migrate.ProxyDataType
+	(ProxyRole)(0),                  // 8: migrate.ProxyRole
+	(*VolumeChunk)(nil),             // 9: migrate.VolumeChunk
+	(*LayerBlob)(nil),               // 10: migrate.LayerBlob
+	(*ContainerChunk)(nil),          // 11: migrate.ContainerChunk
+	(*NetworkConfig)(nil),           // 12: migrate.NetworkConfig
+	(*TransferAck)(nil),             // 13: migrate.TransferAck
+	(*TransferResult)(nil),          // 14: migrate.TransferResult
+	(*ResourceRequest)(nil),         // 15: migrate.ResourceRequest
+	(*ResourceList)(nil),            // 16: migrate.ResourceList
+	(*ContainerResource)(nil),       // 17: migrate.ContainerResource
+	(*ImageResource)(nil),           // 18: migrate.ImageResource
+	(*VolumeResource)(nil),          // 19: migrate.VolumeResource
+	(*NetworkResource)(nil),         // 20: migrate.NetworkResource
+	(*Empty)(nil),                   // 21: migrate.Empty
+	(*Pong)(nil),                    // 22: migrate.Pong
+	(*WorkerRegistration)(nil),      // 23: migrate.WorkerRegistration
+	(*RegistrationResponse)(nil),    // 24: migrate.RegistrationResponse
+	(*WorkerMessage)(nil),           // 25: migrate.WorkerMessage
+	(*MasterCommand)(nil),           // 26: migrate.MasterCommand
+	(*Heartbeat)(nil),               // 27: migrate.Heartbeat
+	(*HeartbeatAck)(nil),            // 28: migrate.HeartbeatAck
+	(*SystemResources)(nil),         // 29: migrate.SystemResources
+	(*ResourceInventory)(nil),       // 30: migrate.ResourceInventory
+	(*AckResponse)(nil),             // 31: migrate.AckResponse
+	(*MigrationRequest)(nil),        // 32: migrate.MigrationRequest
+	(*MigrationResponse)(nil),       // 33: migrate.MigrationResponse
+	(*AcceptMigrationRequest)(nil),  // 34: migrate.AcceptMigrationRequest
+	(*AcceptMigrationResponse)(nil), // 35: migrate.AcceptMigrationResponse
+	(*HealthResponse)(nil),          // 36: migrate.HealthResponse
+	(*StartMigrationCommand)(nil),   // 37: migrate.StartMigrationCommand
+	(*CancelMigrationCommand)(nil),  // 38: migrate.CancelMigrationCommand
+	(*CancelMigrationRequest)(nil),  // 39: migrate.CancelMigrationRequest
+	(*CancelMigrationResponse)(nil), // 40: migrate.CancelMigrationResponse
+	(*UpdateConfigCommand)(nil),     // 41: migrate.UpdateConfigCommand
+	(*ShutdownCommand)(nil),         // 42: migrate.ShutdownCommand
+	(*MigrationProgress)(nil),       // 43: migrate.MigrationProgress
+	(*MigrationComplete)(nil),       // 44: migrate.MigrationComplete
+	(*WorkerError)(nil),             // 45: migrate.WorkerError
+	(*ProxyData)(nil),               // 46: migrate.ProxyData
+	(*ProxyHandshake)(nil),          // 47: migrate.ProxyHandshake
+	(*ProxyClose)(nil),              // 48: migrate.ProxyClose
+	nil,                             // 49: migrate.ContainerResource.LabelsEntry
+	nil,                             // 50: migrate.VolumeResource.LabelsEntry
+	nil,                             // 51: migrate.WorkerRegistration.LabelsEntry
+	nil,                             // 52: migrate.HealthResponse.ChecksEntry
+	nil,                             // 53: migrate.UpdateConfigCommand.LabelsEntry
 }
 var file_proto_migrate_proto_depIdxs = []int32{
 	0,  // 0: migrate.ResourceRequest.type:type_name -> migrate.ResourceType
-	14, // 1: migrate.ResourceList.containers:type_name -> migrate.ContainerResource
-	15, // 2: migrate.ResourceList.images:type_name -> migrate.ImageResource
-	16, // 3: migrate.ResourceList.volumes:type_name -> migrate.VolumeResource
-	17, // 4: migrate.ResourceList.networks:type_name -> migrate.NetworkResource
-	43, // 5: migrate.ContainerResource.labels:type_name -> migrate.ContainerResource.LabelsEntry
-	44, // 6: migrate.VolumeResource.labels:type_name -> migrate.VolumeResource.LabelsEntry
-	45, // 7: migrate.WorkerRegistration.labels:type_name -> migrate.WorkerRegistration.LabelsEntry
-	24, // 8: migrate.WorkerMessage.heartbeat:type_name -> migrate.Heartbeat
-	40, // 9: migrate.WorkerMessage.migration_progress:type_name -> migrate.MigrationProgress
-	41, // 10: migrate.WorkerMessage.migration_complete:type_name -> migrate.MigrationComplete
-	42, // 11: migrate.WorkerMessage.worker_error:type_name -> migrate.WorkerError
-	25, // 12: migrate.MasterCommand.heartbeat_ack:type_name -> migrate.HeartbeatAck
-	34, // 13: migrate.MasterCommand.start_migration:type_name -> migrate.StartMigrationCommand
-	35, // 14: migrate.MasterCommand.cancel_migration:type_name -> migrate.CancelMigrationCommand
-	38, // 15: migrate.MasterCommand.update_config:type_name -> migrate.UpdateConfigCommand
-	39, // 16: migrate.MasterCommand.shutdown:type_name -> migrate.ShutdownCommand
-	1,  // 17: migrate.Heartbeat.status:type_name -> migrate.WorkerStatus
-	26, // 18: migrate.Heartbeat.system_resources:type_name -> migrate.SystemResources
-	14, // 19: migrate.ResourceInventory.containers:type_name -> migrate.ContainerResource
-	15, // 20: migrate.ResourceInventory.images:type_name -> migrate.ImageResource
-	16, // 21: migrate.ResourceInventory.volumes:type_name -> migrate.VolumeResource
-	17, // 22: migrate.ResourceInventory.networks:type_name -> migrate.NetworkResource
-	3,  // 23: migrate.MigrationRequest.mode:type_name -> migrate.MigrationMode
-	4,  // 24: migrate.MigrationRequest.strategy:type_name -> migrate.MigrationStrategy
-	1,  // 25: migrate.HealthResponse.status:type_name -> migrate.WorkerStatus
-	46, // 26: migrate.HealthResponse.checks:type_name -> migrate.HealthResponse.ChecksEntry
-	2,  // 27: migrate.StartMigrationCommand.role:type_name -> migrate.MigrationRole
-	29, // 28: migrate.StartMigrationCommand.request:type_name -> migrate.MigrationRequest
-	31, // 29: migrate.StartMigrationCommand.accept_request:type_name -> migrate.AcceptMigrationRequest
-	47, // 30: migrate.UpdateConfigCommand.labels:type_name -> migrate.UpdateConfigCommand.LabelsEntry
-	5,  // 31: migrate.MigrationProgress.phase:type_name -> migrate.MigrationPhase
-	6,  // 32: migrate.MigrationService.TransferVolume:input_type -> migrate.VolumeChunk
-	7,  // 33: migrate.MigrationService.TransferImageLayers:input_type -> migrate.LayerBlob
-	12, // 34: migrate.MigrationService.GetResourceList:input_type -> migrate.ResourceRequest
-	18, // 35: migrate.MigrationService.Ping:input_type -> migrate.Empty
-	8,  // 36: migrate.MigrationService.TransferContainer:input_type -> migrate.ContainerChunk
-	9,  // 37: migrate.MigrationService.TransferNetwork:input_type -> migrate.NetworkConfig
-	20, // 38: migrate.MasterService.RegisterWorker:input_type -> migrate.WorkerRegistration
-	22, // 39: migrate.MasterService.WorkerStream:input_type -> migrate.WorkerMessage
-	27, // 40: migrate.MasterService.ReportResources:input_type -> migrate.ResourceInventory
-	29, // 41: migrate.WorkerService.InitiateMigration:input_type -> migrate.MigrationRequest
-	31, // 42: migrate.WorkerService.AcceptMigration:input_type -> migrate.AcceptMigrationRequest
-	18, // 43: migrate.WorkerService.HealthCheck:input_type -> migrate.Empty
-	36, // 44: migrate.WorkerService.CancelMigration:input_type -> migrate.CancelMigrationRequest
-	10, // 45: migrate.MigrationService.TransferVolume:output_type -> migrate.TransferAck
-	10, // 46: migrate.MigrationService.TransferImageLayers:output_type -> migrate.TransferAck
-	13, // 47: migrate.MigrationService.GetResourceList:output_type -> migrate.ResourceList
-	19, // 48: migrate.MigrationService.Ping:output_type -> migrate.Pong
-	10, // 49: migrate.MigrationService.TransferContainer:output_type -> migrate.TransferAck
-	11, // 50: migrate.MigrationService.TransferNetwork:output_type -> migrate.TransferResult
-	21, // 51: migrate.MasterService.RegisterWorker:output_type -> migrate.RegistrationResponse
-	23, // 52: migrate.MasterService.WorkerStream:output_type -> migrate.MasterCommand
-	28, // 53: migrate.MasterService.ReportResources:output_type -> migrate.AckResponse
-	30, // 54: migrate.WorkerService.InitiateMigration:output_type -> migrate.MigrationResponse
-	32, // 55: migrate.WorkerService.AcceptMigration:output_type -> migrate.AcceptMigrationResponse
-	33, // 56: migrate.WorkerService.HealthCheck:output_type -> migrate.HealthResponse
-	37, // 57: migrate.WorkerService.CancelMigration:output_type -> migrate.CancelMigrationResponse
-	45, // [45:58] is the sub-list for method output_type
-	32, // [32:45] is the sub-list for method input_type
-	32, // [32:32] is the sub-list for extension type_name
-	32, // [32:32] is the sub-list for extension extendee
-	0,  // [0:32] is the sub-list for field type_name
+	17, // 1: migrate.ResourceList.containers:type_name -> migrate.ContainerResource
+	18, // 2: migrate.ResourceList.images:type_name -> migrate.ImageResource
+	19, // 3: migrate.ResourceList.volumes:type_name -> migrate.VolumeResource
+	20, // 4: migrate.ResourceList.networks:type_name -> migrate.NetworkResource
+	49, // 5: migrate.ContainerResource.labels:type_name -> migrate.ContainerResource.LabelsEntry
+	50, // 6: migrate.VolumeResource.labels:type_name -> migrate.VolumeResource.LabelsEntry
+	51, // 7: migrate.WorkerRegistration.labels:type_name -> migrate.WorkerRegistration.LabelsEntry
+	27, // 8: migrate.WorkerMessage.heartbeat:type_name -> migrate.Heartbeat
+	43, // 9: migrate.WorkerMessage.migration_progress:type_name -> migrate.MigrationProgress
+	44, // 10: migrate.WorkerMessage.migration_complete:type_name -> migrate.MigrationComplete
+	45, // 11: migrate.WorkerMessage.worker_error:type_name -> migrate.WorkerError
+	28, // 12: migrate.MasterCommand.heartbeat_ack:type_name -> migrate.HeartbeatAck
+	37, // 13: migrate.MasterCommand.start_migration:type_name -> migrate.StartMigrationCommand
+	38, // 14: migrate.MasterCommand.cancel_migration:type_name -> migrate.CancelMigrationCommand
+	41, // 15: migrate.MasterCommand.update_config:type_name -> migrate.UpdateConfigCommand
+	42, // 16: migrate.MasterCommand.shutdown:type_name -> migrate.ShutdownCommand
+	2,  // 17: migrate.Heartbeat.status:type_name -> migrate.WorkerStatus
+	29, // 18: migrate.Heartbeat.system_resources:type_name -> migrate.SystemResources
+	17, // 19: migrate.ResourceInventory.containers:type_name -> migrate.ContainerResource
+	18, // 20: migrate.ResourceInventory.images:type_name -> migrate.ImageResource
+	19, // 21: migrate.ResourceInventory.volumes:type_name -> migrate.VolumeResource
+	20, // 22: migrate.ResourceInventory.networks:type_name -> migrate.NetworkResource
+	4,  // 23: migrate.MigrationRequest.mode:type_name -> migrate.MigrationMode
+	5,  // 24: migrate.MigrationRequest.strategy:type_name -> migrate.MigrationStrategy
+	1,  // 25: migrate.MigrationRequest.transfer_mode:type_name -> migrate.TransferMode
+	1,  // 26: migrate.AcceptMigrationRequest.transfer_mode:type_name -> migrate.TransferMode
+	2,  // 27: migrate.HealthResponse.status:type_name -> migrate.WorkerStatus
+	52, // 28: migrate.HealthResponse.checks:type_name -> migrate.HealthResponse.ChecksEntry
+	3,  // 29: migrate.StartMigrationCommand.role:type_name -> migrate.MigrationRole
+	32, // 30: migrate.StartMigrationCommand.request:type_name -> migrate.MigrationRequest
+	34, // 31: migrate.StartMigrationCommand.accept_request:type_name -> migrate.AcceptMigrationRequest
+	1,  // 32: migrate.StartMigrationCommand.transfer_mode:type_name -> migrate.TransferMode
+	53, // 33: migrate.UpdateConfigCommand.labels:type_name -> migrate.UpdateConfigCommand.LabelsEntry
+	6,  // 34: migrate.MigrationProgress.phase:type_name -> migrate.MigrationPhase
+	7,  // 35: migrate.ProxyData.type:type_name -> migrate.ProxyDataType
+	9,  // 36: migrate.ProxyData.volume_chunk:type_name -> migrate.VolumeChunk
+	10, // 37: migrate.ProxyData.layer_blob:type_name -> migrate.LayerBlob
+	11, // 38: migrate.ProxyData.container_chunk:type_name -> migrate.ContainerChunk
+	13, // 39: migrate.ProxyData.ack:type_name -> migrate.TransferAck
+	47, // 40: migrate.ProxyData.handshake:type_name -> migrate.ProxyHandshake
+	48, // 41: migrate.ProxyData.close:type_name -> migrate.ProxyClose
+	8,  // 42: migrate.ProxyHandshake.role:type_name -> migrate.ProxyRole
+	9,  // 43: migrate.MigrationService.TransferVolume:input_type -> migrate.VolumeChunk
+	10, // 44: migrate.MigrationService.TransferImageLayers:input_type -> migrate.LayerBlob
+	15, // 45: migrate.MigrationService.GetResourceList:input_type -> migrate.ResourceRequest
+	21, // 46: migrate.MigrationService.Ping:input_type -> migrate.Empty
+	11, // 47: migrate.MigrationService.TransferContainer:input_type -> migrate.ContainerChunk
+	12, // 48: migrate.MigrationService.TransferNetwork:input_type -> migrate.NetworkConfig
+	23, // 49: migrate.MasterService.RegisterWorker:input_type -> migrate.WorkerRegistration
+	25, // 50: migrate.MasterService.WorkerStream:input_type -> migrate.WorkerMessage
+	30, // 51: migrate.MasterService.ReportResources:input_type -> migrate.ResourceInventory
+	32, // 52: migrate.WorkerService.InitiateMigration:input_type -> migrate.MigrationRequest
+	34, // 53: migrate.WorkerService.AcceptMigration:input_type -> migrate.AcceptMigrationRequest
+	21, // 54: migrate.WorkerService.HealthCheck:input_type -> migrate.Empty
+	39, // 55: migrate.WorkerService.CancelMigration:input_type -> migrate.CancelMigrationRequest
+	46, // 56: migrate.ProxyService.OpenProxyChannel:input_type -> migrate.ProxyData
+	13, // 57: migrate.MigrationService.TransferVolume:output_type -> migrate.TransferAck
+	13, // 58: migrate.MigrationService.TransferImageLayers:output_type -> migrate.TransferAck
+	16, // 59: migrate.MigrationService.GetResourceList:output_type -> migrate.ResourceList
+	22, // 60: migrate.MigrationService.Ping:output_type -> migrate.Pong
+	13, // 61: migrate.MigrationService.TransferContainer:output_type -> migrate.TransferAck
+	14, // 62: migrate.MigrationService.TransferNetwork:output_type -> migrate.TransferResult
+	24, // 63: migrate.MasterService.RegisterWorker:output_type -> migrate.RegistrationResponse
+	26, // 64: migrate.MasterService.WorkerStream:output_type -> migrate.MasterCommand
+	31, // 65: migrate.MasterService.ReportResources:output_type -> migrate.AckResponse
+	33, // 66: migrate.WorkerService.InitiateMigration:output_type -> migrate.MigrationResponse
+	35, // 67: migrate.WorkerService.AcceptMigration:output_type -> migrate.AcceptMigrationResponse
+	36, // 68: migrate.WorkerService.HealthCheck:output_type -> migrate.HealthResponse
+	40, // 69: migrate.WorkerService.CancelMigration:output_type -> migrate.CancelMigrationResponse
+	46, // 70: migrate.ProxyService.OpenProxyChannel:output_type -> migrate.ProxyData
+	57, // [57:71] is the sub-list for method output_type
+	43, // [43:57] is the sub-list for method input_type
+	43, // [43:43] is the sub-list for extension type_name
+	43, // [43:43] is the sub-list for extension extendee
+	0,  // [0:43] is the sub-list for field type_name
 }
 
 func init() { file_proto_migrate_proto_init() }
@@ -3632,15 +4179,23 @@ func file_proto_migrate_proto_init() {
 		(*MasterCommand_UpdateConfig)(nil),
 		(*MasterCommand_Shutdown)(nil),
 	}
+	file_proto_migrate_proto_msgTypes[37].OneofWrappers = []any{
+		(*ProxyData_VolumeChunk)(nil),
+		(*ProxyData_LayerBlob)(nil),
+		(*ProxyData_ContainerChunk)(nil),
+		(*ProxyData_Ack)(nil),
+		(*ProxyData_Handshake)(nil),
+		(*ProxyData_Close)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_migrate_proto_rawDesc), len(file_proto_migrate_proto_rawDesc)),
-			NumEnums:      6,
-			NumMessages:   42,
+			NumEnums:      9,
+			NumMessages:   45,
 			NumExtensions: 0,
-			NumServices:   3,
+			NumServices:   4,
 		},
 		GoTypes:           file_proto_migrate_proto_goTypes,
 		DependencyIndexes: file_proto_migrate_proto_depIdxs,

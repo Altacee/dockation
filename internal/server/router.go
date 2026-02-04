@@ -113,6 +113,9 @@ func (s *Server) setupRouter() {
 	// API routes
 	api := r.Group("/api")
 	{
+		// Config info (for determining mode)
+		api.GET("/config", s.GetConfig)
+
 		// Resource counts (for dashboard)
 		api.GET("/resources/counts", s.GetResourceCounts)
 
@@ -277,4 +280,23 @@ func (s *Server) SetMaster(m *master.Master) {
 // GetRouter returns the gin router for direct route registration
 func (s *Server) GetRouter() *gin.Engine {
 	return s.router
+}
+
+// GetConfig returns the server configuration info for the UI
+func (s *Server) GetConfig(c *gin.Context) {
+	role := s.config.Role
+	if role == "" {
+		role = "p2p" // Default to p2p mode
+	}
+
+	response := gin.H{
+		"role": role,
+	}
+
+	// Include enrollment token if in master mode
+	if s.config.IsMaster() && s.config.Master != nil {
+		response["enrollment_token"] = s.config.Master.EnrollmentToken
+	}
+
+	c.JSON(http.StatusOK, response)
 }

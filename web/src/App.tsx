@@ -6,20 +6,26 @@ import { ToastContainer } from './components/common/Toast';
 import { ConnectionStatus } from './components/common/ConnectionStatus';
 import { ResourceCard } from './components/Dashboard/ResourceCard';
 import { PeerList } from './components/Dashboard/PeerList';
+import { WorkerList } from './components/Dashboard/WorkerList';
 import { QuickActions } from './components/Dashboard/QuickActions';
+import { MasterQuickActions } from './components/Dashboard/MasterQuickActions';
 import { GenerateCode } from './components/Pairing/GenerateCode';
 import { EnterCode } from './components/Pairing/EnterCode';
 import { PreFlightChecks } from './components/Migration/PreFlightChecks';
 import { MigrationProgress } from './components/Migration/MigrationProgress';
 import { MigrationComplete } from './components/Migration/MigrationComplete';
+import { MigrationWizard } from './components/Migration/MigrationWizard';
+import { WorkerResourceBrowser } from './components/Migration/WorkerResourceBrowser';
 import { ResourceListView } from './components/Resources/ResourceListView';
 import type {
   Toast as ToastType,
   Peer,
+  Worker,
   PairingCode,
   ResourceCounts,
   MigrationState,
   WSMessage,
+  ConfigInfo,
 } from './types';
 import { generateId } from './lib/utils';
 import api from './api/client';
@@ -33,12 +39,14 @@ const queryClient = new QueryClient({
   },
 });
 
-type View = 'dashboard' | 'generate-code' | 'enter-code' | 'migration' | 'containers' | 'images' | 'volumes' | 'networks' | 'compose';
+type View = 'dashboard' | 'generate-code' | 'enter-code' | 'migration' | 'migration-wizard' | 'worker-resources' | 'containers' | 'images' | 'volumes' | 'networks' | 'compose';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [toasts, setToasts] = useState<ToastType[]>([]);
   const [peers, setPeers] = useState<Peer[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [configInfo, setConfigInfo] = useState<ConfigInfo | null>(null);
   const [resourceCounts, setResourceCounts] = useState<ResourceCounts>({
     containers: 0,
     images: 0,
@@ -51,6 +59,10 @@ function App() {
   });
   const [pairingCode, setPairingCode] = useState<PairingCode | null>(null);
   const [activeMigration, setActiveMigration] = useState<MigrationState | null>(null);
+  const [selectedWorkerForResources, setSelectedWorkerForResources] = useState<Worker | null>(null);
+  const [preselectedSourceWorker, setPreselectedSourceWorker] = useState<Worker | null>(null);
+
+  const isMasterMode = configInfo?.role === 'master';
 
   // WebSocket connection - status shown in header, no toast spam
   const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
@@ -65,7 +77,14 @@ function App() {
         loadResourceCounts();
         break;
       case 'peer_status':
-        loadPeers();
+        if (isMasterMode) {
+          loadWorkers();
+        } else {
+          loadPeers();
+        }
+        break;
+      case 'worker_update':
+        loadWorkers();
         break;
       case 'migration_progress':
         if (activeMigration) {
@@ -101,9 +120,20 @@ function App() {
 
   // Load initial data
   useEffect(() => {
+    loadConfig();
     loadResourceCounts();
-    loadPeers();
   }, []);
+
+  // Load peers or workers based on mode
+  useEffect(() => {
+    if (configInfo) {
+      if (configInfo.role === 'master') {
+        loadWorkers();
+      } else {
+        loadPeers();
+      }
+    }
+  }, [configInfo]);
 
   // Prevent navigation during active migration
   useEffect(() => {
@@ -123,6 +153,13 @@ function App() {
     }
   }, [activeMigration?.phase]);
 
+  async function loadConfig() {
+    const response = await api.config.info();
+    if (response.success && response.data) {
+      setConfigInfo(response.data);
+    }
+  }
+
   async function loadResourceCounts() {
     const response = await api.resources.counts();
     if (response.success && response.data) {
@@ -134,6 +171,13 @@ function App() {
     const response = await api.peers.list();
     if (response.success && response.data) {
       setPeers(response.data);
+    }
+  }
+
+  async function loadWorkers() {
+    const response = await api.workers.list();
+    if (response.success && response.data) {
+      setWorkers(response.data);
     }
   }
 
@@ -252,32 +296,62 @@ function App() {
                 </div>
               </section>
 
-              {/* Peers and actions */}
+              {/* Workers/Peers and actions */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
-                  <PeerList
-                    peers={peers}
-                    onMigrate={handleStartMigration}
-                    onDisconnect={async (peer) => {
-                      await api.peers.disconnect(peer.id);
-                      await loadPeers();
-                      addToast({
-                        type: 'info',
-                        title: 'Disconnected',
-                        message: `Disconnected from ${peer.name}`,
-                      });
-                    }}
-                  />
+                  {isMasterMode ? (
+                    <WorkerList
+                      workers={workers}
+                      onRemove={async (worker) => {
+                        await api.workers.remove(worker.id);
+                        await loadWorkers();
+                        addToast({
+                          type: 'info',
+                          title: 'Worker Removed',
+                          message: `Removed worker ${worker.name}`,
+                        });
+                      }}
+                      onViewResources={(worker) => {
+                        setSelectedWorkerForResources(worker);
+                        setCurrentView('worker-resources');
+                      }}
+                    />
+                  ) : (
+                    <PeerList
+                      peers={peers}
+                      onMigrate={handleStartMigration}
+                      onDisconnect={async (peer) => {
+                        await api.peers.disconnect(peer.id);
+                        await loadPeers();
+                        addToast({
+                          type: 'info',
+                          title: 'Disconnected',
+                          message: `Disconnected from ${peer.name}`,
+                        });
+                      }}
+                    />
+                  )}
                 </div>
                 <div>
-                  <QuickActions
-                    hasPeers={peers.length > 0}
-                    onPairDevice={handleGeneratePairingCode}
-                    onScanCode={() => setCurrentView('enter-code')}
-                    onStartMigration={() =>
-                      addToast({ type: 'info', title: 'Select a peer to migrate to' })
-                    }
-                  />
+                  {isMasterMode ? (
+                    <MasterQuickActions
+                      enrollmentToken={configInfo?.enrollment_token}
+                      workerCount={workers.length}
+                      onStartMigration={() => {
+                        setPreselectedSourceWorker(null);
+                        setCurrentView('migration-wizard');
+                      }}
+                    />
+                  ) : (
+                    <QuickActions
+                      hasPeers={peers.length > 0}
+                      onPairDevice={handleGeneratePairingCode}
+                      onScanCode={() => setCurrentView('enter-code')}
+                      onStartMigration={() =>
+                        addToast({ type: 'info', title: 'Select a peer to migrate to' })
+                      }
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -377,6 +451,73 @@ function App() {
 
           {currentView === 'compose' && (
             <ResourceListView type="compose" onBack={() => setCurrentView('dashboard')} />
+          )}
+
+          {currentView === 'migration-wizard' && (
+            <MigrationWizard
+              workers={workers}
+              preselectedSourceWorker={preselectedSourceWorker || undefined}
+              onComplete={async (migrationId) => {
+                addToast({
+                  type: 'success',
+                  title: 'Migration Started',
+                  message: `Migration ${migrationId} has been started`,
+                });
+                // Set up migration progress view
+                setActiveMigration({
+                  id: migrationId,
+                  phase: 'running',
+                  sourcePeerId: '',
+                  targetPeerId: '',
+                  selectedResources: [],
+                  options: {
+                    mode: 'copy',
+                    strategy: 'cold',
+                    conflictResolution: 'error',
+                    stopSourceContainers: true,
+                    startTargetContainers: true,
+                    pathMappings: [],
+                    dryRun: false,
+                  },
+                  preflightChecks: [],
+                  progress: {
+                    currentStep: 1,
+                    totalSteps: 5,
+                    currentStepName: 'Initializing',
+                    currentItem: 'Starting migration...',
+                    currentItemIndex: 0,
+                    totalItems: 1,
+                    bytesTransferred: 0,
+                    totalBytes: 0,
+                    transferSpeed: 0,
+                    startTime: new Date().toISOString(),
+                    estimatedCompletion: null,
+                  },
+                  errors: [],
+                  canRetry: false,
+                  canResume: false,
+                  canCancel: true,
+                  completedSteps: [],
+                });
+                setCurrentView('migration');
+              }}
+              onCancel={() => setCurrentView('dashboard')}
+            />
+          )}
+
+          {currentView === 'worker-resources' && selectedWorkerForResources && (
+            <WorkerResourceBrowser
+              worker={selectedWorkerForResources}
+              onBack={() => {
+                setSelectedWorkerForResources(null);
+                setCurrentView('dashboard');
+              }}
+              onStartMigration={(worker) => {
+                setPreselectedSourceWorker(worker);
+                setSelectedWorkerForResources(null);
+                setCurrentView('migration-wizard');
+              }}
+            />
           )}
         </main>
 

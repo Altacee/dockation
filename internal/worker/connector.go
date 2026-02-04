@@ -29,6 +29,7 @@ type Connector struct {
 
 	heartbeatInterval time.Duration
 	inventoryInterval time.Duration
+	enrollmentToken   string // Store for reconnection
 
 	mu        sync.RWMutex
 	connected bool
@@ -50,6 +51,7 @@ func NewConnector(worker *Worker, cryptoManager *peer.CryptoManager, logger *obs
 // Connect connects to the master and registers
 func (c *Connector) Connect(ctx context.Context, enrollmentToken string) error {
 	c.ctx, c.cancel = context.WithCancel(ctx)
+	c.enrollmentToken = enrollmentToken // Store for reconnection
 
 	// Get TLS config
 	tlsConfig, err := c.cryptoManager.GetClientTLSConfig()
@@ -394,9 +396,6 @@ func (c *Connector) handleDisconnect() {
 func (c *Connector) reconnect() {
 	c.logger.Info("attempting to reconnect to master")
 
-	// Get stored auth token for reconnection
-	_, authToken := c.worker.GetCredentials()
-
 	tlsConfig, err := c.cryptoManager.GetClientTLSConfig()
 	if err != nil {
 		c.logger.Error("failed to get TLS config for reconnect", zap.Error(err))
@@ -404,8 +403,8 @@ func (c *Connector) reconnect() {
 	}
 	tlsConfig.InsecureSkipVerify = true
 
-	// Use auth token as enrollment token for re-registration
-	c.connectWithRetry(authToken, tlsConfig)
+	// Use stored enrollment token for re-registration
+	c.connectWithRetry(c.enrollmentToken, tlsConfig)
 }
 
 // SendProgress sends migration progress to master

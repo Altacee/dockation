@@ -22,6 +22,7 @@ type GRPCServer struct {
 	cryptoManager *peer.CryptoManager
 	logger        *observability.Logger
 	server        *grpc.Server
+	proxyManager  *ProxyManager
 }
 
 // NewGRPCServer creates a new gRPC server for master
@@ -30,12 +31,14 @@ func NewGRPCServer(master *Master, cryptoManager *peer.CryptoManager, logger *ob
 		master:        master,
 		cryptoManager: cryptoManager,
 		logger:        logger,
+		proxyManager:  NewProxyManager(master.registry, logger),
 	}, nil
 }
 
 // RegisterOn registers the MasterService on an existing gRPC server
 func (s *GRPCServer) RegisterOn(server *grpc.Server) {
 	pb.RegisterMasterServiceServer(server, s)
+	pb.RegisterProxyServiceServer(server, s.proxyManager)
 	s.server = server
 	s.logger.Info("master service registered on existing gRPC server")
 }
@@ -59,6 +62,7 @@ func (s *GRPCServer) Start(addr string) error {
 
 	s.server = grpc.NewServer(opts...)
 	pb.RegisterMasterServiceServer(s.server, s)
+	pb.RegisterProxyServiceServer(s.server, s.proxyManager)
 
 	s.logger.Info("master gRPC server starting", zap.String("addr", addr))
 

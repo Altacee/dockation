@@ -25,6 +25,7 @@ type MigrationResponse struct {
 	ImageIDs         []string   `json:"image_ids,omitempty"`
 	VolumeNames      []string   `json:"volume_names,omitempty"`
 	NetworkIDs       []string   `json:"network_ids,omitempty"`
+	TransferMode     string     `json:"transfer_mode,omitempty"`
 }
 
 // StartMigrationRequest is the request body for starting a migration
@@ -35,8 +36,9 @@ type StartMigrationRequest struct {
 	ImageIDs       []string `json:"image_ids"`
 	VolumeNames    []string `json:"volume_names"`
 	NetworkIDs     []string `json:"network_ids"`
-	Mode           string   `json:"mode"`     // cold, warm, live
-	Strategy       string   `json:"strategy"` // full, incremental, snapshot
+	Mode           string   `json:"mode"`          // cold, warm, live
+	Strategy       string   `json:"strategy"`      // full, incremental, snapshot
+	TransferMode   string   `json:"transfer_mode"` // direct, proxy, auto
 }
 
 // RegisterMigrationRoutes registers migration API routes
@@ -78,6 +80,16 @@ func (m *Master) startMigration(c *gin.Context) {
 		strategy = pb.MigrationStrategy_MIGRATION_STRATEGY_SNAPSHOT
 	}
 
+	transferMode := pb.TransferMode_TRANSFER_MODE_DIRECT
+	switch req.TransferMode {
+	case "proxy":
+		transferMode = pb.TransferMode_TRANSFER_MODE_PROXY
+	case "auto":
+		transferMode = pb.TransferMode_TRANSFER_MODE_AUTO
+	case "direct", "":
+		transferMode = pb.TransferMode_TRANSFER_MODE_DIRECT
+	}
+
 	job, err := m.orchestrator.StartMigration(c.Request.Context(), &MigrationRequest{
 		SourceWorkerID: req.SourceWorkerID,
 		TargetWorkerID: req.TargetWorkerID,
@@ -87,6 +99,7 @@ func (m *Master) startMigration(c *gin.Context) {
 		NetworkIDs:     req.NetworkIDs,
 		Mode:           mode,
 		Strategy:       strategy,
+		TransferMode:   transferMode,
 	})
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -158,6 +171,7 @@ func migrationToResponse(j *MigrationJob) MigrationResponse {
 		ImageIDs:         j.ImageIDs,
 		VolumeNames:      j.VolumeNames,
 		NetworkIDs:       j.NetworkIDs,
+		TransferMode:     transferModeToString(j.TransferMode),
 	}
 
 	if !j.CompletedAt.IsZero() {
@@ -165,4 +179,15 @@ func migrationToResponse(j *MigrationJob) MigrationResponse {
 	}
 
 	return resp
+}
+
+func transferModeToString(mode pb.TransferMode) string {
+	switch mode {
+	case pb.TransferMode_TRANSFER_MODE_PROXY:
+		return "proxy"
+	case pb.TransferMode_TRANSFER_MODE_AUTO:
+		return "auto"
+	default:
+		return "direct"
+	}
 }

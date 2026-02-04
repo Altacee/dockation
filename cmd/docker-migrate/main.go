@@ -342,10 +342,10 @@ var masterCmd = &cobra.Command{
 		// Set role to master
 		cfg.Role = config.RoleMaster
 
-		// Get or generate enrollment token
+		// Get or generate enrollment token (persisted across restarts)
 		enrollmentToken, _ := cmd.Flags().GetString("enrollment-token")
 		if enrollmentToken == "" {
-			enrollmentToken = generateEnrollmentToken()
+			enrollmentToken = loadOrGenerateEnrollmentToken()
 		}
 
 		if cfg.Master == nil {
@@ -413,6 +413,27 @@ func generateEnrollmentToken() string {
 		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 	return fmt.Sprintf("%x", b)
+}
+
+const enrollmentTokenFile = ".docker-migrate-token"
+
+func loadOrGenerateEnrollmentToken() string {
+	// Try to load existing token from file
+	data, err := os.ReadFile(enrollmentTokenFile)
+	if err == nil {
+		token := string(data)
+		if len(token) >= 16 {
+			return token
+		}
+	}
+
+	// Generate new token and persist it
+	token := generateEnrollmentToken()
+	if err := os.WriteFile(enrollmentTokenFile, []byte(token), 0600); err != nil {
+		// Log warning but continue - token will work for this session
+		fmt.Fprintf(os.Stderr, "Warning: could not persist enrollment token: %v\n", err)
+	}
+	return token
 }
 
 func runWorker(cmd *cobra.Command, args []string, enrollmentToken string) error {

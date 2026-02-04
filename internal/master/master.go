@@ -56,8 +56,8 @@ func New(
 	// Initialize registry
 	m.registry = NewRegistry(logger, cfg.Master.WorkerTimeout)
 
-	// Initialize orchestrator
-	m.orchestrator = NewOrchestrator(m.registry, logger)
+	// Initialize orchestrator with the gRPC address for proxy mode
+	m.orchestrator = NewOrchestrator(m.registry, logger, cfg.GRPCAddr)
 
 	// Initialize gRPC server
 	var err error

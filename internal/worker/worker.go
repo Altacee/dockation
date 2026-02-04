@@ -61,6 +61,7 @@ func New(
 
 	// Initialize migration executor
 	w.executor = NewExecutor(dockerClient, transferManager, cryptoManager, logger)
+	w.executor.SetCredentialsProvider(w)
 
 	// Initialize gRPC server for WorkerService
 	var err error

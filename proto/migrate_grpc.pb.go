@@ -719,3 +719,107 @@ var WorkerService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/migrate.proto",
 }
+
+const (
+	ProxyService_OpenProxyChannel_FullMethodName = "/migrate.ProxyService/OpenProxyChannel"
+)
+
+// ProxyServiceClient is the client API for ProxyService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ProxyService allows master to relay data between workers that cannot
+// directly connect to each other (e.g., behind NAT/firewalls)
+type ProxyServiceClient interface {
+	// OpenProxyChannel opens a bidirectional stream for relaying migration data
+	OpenProxyChannel(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ProxyData, ProxyData], error)
+}
+
+type proxyServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewProxyServiceClient(cc grpc.ClientConnInterface) ProxyServiceClient {
+	return &proxyServiceClient{cc}
+}
+
+func (c *proxyServiceClient) OpenProxyChannel(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ProxyData, ProxyData], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ProxyService_ServiceDesc.Streams[0], ProxyService_OpenProxyChannel_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ProxyData, ProxyData]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ProxyService_OpenProxyChannelClient = grpc.BidiStreamingClient[ProxyData, ProxyData]
+
+// ProxyServiceServer is the server API for ProxyService service.
+// All implementations must embed UnimplementedProxyServiceServer
+// for forward compatibility.
+//
+// ProxyService allows master to relay data between workers that cannot
+// directly connect to each other (e.g., behind NAT/firewalls)
+type ProxyServiceServer interface {
+	// OpenProxyChannel opens a bidirectional stream for relaying migration data
+	OpenProxyChannel(grpc.BidiStreamingServer[ProxyData, ProxyData]) error
+	mustEmbedUnimplementedProxyServiceServer()
+}
+
+// UnimplementedProxyServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedProxyServiceServer struct{}
+
+func (UnimplementedProxyServiceServer) OpenProxyChannel(grpc.BidiStreamingServer[ProxyData, ProxyData]) error {
+	return status.Error(codes.Unimplemented, "method OpenProxyChannel not implemented")
+}
+func (UnimplementedProxyServiceServer) mustEmbedUnimplementedProxyServiceServer() {}
+func (UnimplementedProxyServiceServer) testEmbeddedByValue()                      {}
+
+// UnsafeProxyServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ProxyServiceServer will
+// result in compilation errors.
+type UnsafeProxyServiceServer interface {
+	mustEmbedUnimplementedProxyServiceServer()
+}
+
+func RegisterProxyServiceServer(s grpc.ServiceRegistrar, srv ProxyServiceServer) {
+	// If the following call panics, it indicates UnimplementedProxyServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ProxyService_ServiceDesc, srv)
+}
+
+func _ProxyService_OpenProxyChannel_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ProxyServiceServer).OpenProxyChannel(&grpc.GenericServerStream[ProxyData, ProxyData]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ProxyService_OpenProxyChannelServer = grpc.BidiStreamingServer[ProxyData, ProxyData]
+
+// ProxyService_ServiceDesc is the grpc.ServiceDesc for ProxyService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ProxyService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "migrate.ProxyService",
+	HandlerType: (*ProxyServiceServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "OpenProxyChannel",
+			Handler:       _ProxyService_OpenProxyChannel_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "proto/migrate.proto",
+}

@@ -1,3 +1,67 @@
+// Worker resource types (from backend API)
+export interface WorkerResources {
+  worker_id: string;
+  containers: WorkerContainer[] | null;
+  images: WorkerImage[] | null;
+  volumes: WorkerVolume[] | null;
+  networks: WorkerNetwork[] | null;
+  updated_at: string;
+}
+
+export interface WorkerContainer {
+  id: string;
+  names: string[];
+  image: string;
+  state: string;
+  status: string;
+}
+
+export interface WorkerImage {
+  id: string;
+  repo_tags: string[] | null;
+  size: number;
+}
+
+export interface WorkerVolume {
+  name: string;
+  driver: string;
+  mountpoint: string;
+}
+
+export interface WorkerNetwork {
+  id: string;
+  name: string;
+  driver: string;
+}
+
+export type TransferMode = 'direct' | 'proxy' | 'auto';
+
+export interface StartMigrationRequest {
+  source_worker_id: string;
+  target_worker_id: string;
+  container_ids: string[];
+  image_ids: string[];
+  volume_names: string[];
+  network_ids: string[];
+  mode: 'cold' | 'warm' | 'live';
+  strategy: 'full' | 'incremental' | 'snapshot';
+  transfer_mode?: TransferMode;
+}
+
+export interface MigrationJob {
+  id: string;
+  source_worker_id: string;
+  target_worker_id: string;
+  status: string;
+  phase: string;
+  progress: number;
+  bytes_transferred: number;
+  total_bytes: number;
+  started_at: string;
+  error?: string;
+  transfer_mode?: TransferMode;
+}
+
 // Core Docker resource types
 export interface PortMapping {
   containerPort: number;
@@ -88,6 +152,30 @@ export interface Peer {
   os: string;
   dockerVersion: string;
   availableSpace: number;
+}
+
+// Worker types (master-worker mode)
+export interface Worker {
+  id: string;
+  name: string;
+  hostname: string;
+  grpc_address: string;
+  labels: Record<string, string>;
+  version: string;
+  status: string;
+  online: boolean;
+  registered_at: string;
+  last_heartbeat: string;
+  container_count: number;
+  image_count: number;
+  volume_count: number;
+  network_count: number;
+}
+
+// Config info
+export interface ConfigInfo {
+  role: 'master' | 'worker' | 'p2p' | '';
+  enrollment_token?: string;
 }
 
 export interface PairingCode {
@@ -212,6 +300,7 @@ export type WSMessageType =
   | 'pong'
   | 'resource_update'
   | 'peer_status'
+  | 'worker_update'
   | 'migration_progress'
   | 'migration_error'
   | 'migration_complete'

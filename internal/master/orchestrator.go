@@ -22,8 +22,9 @@ type MigrationJob struct {
 	VolumeNames  []string
 	NetworkIDs   []string
 
-	Mode     pb.MigrationMode
-	Strategy pb.MigrationStrategy
+	Mode         pb.MigrationMode
+	Strategy     pb.MigrationStrategy
+	TransferMode pb.TransferMode
 
 	Status           MigrationJobStatus
 	Phase            pb.MigrationPhase
@@ -53,16 +54,18 @@ const (
 type Orchestrator struct {
 	registry *Registry
 	logger   *observability.Logger
+	grpcAddr string // Master's gRPC address for proxy mode
 
 	migrations map[string]*MigrationJob
 	mu         sync.RWMutex
 }
 
 // NewOrchestrator creates a new migration orchestrator
-func NewOrchestrator(registry *Registry, logger *observability.Logger) *Orchestrator {
+func NewOrchestrator(registry *Registry, logger *observability.Logger, grpcAddr string) *Orchestrator {
 	return &Orchestrator{
 		registry:   registry,
 		logger:     logger,
+		grpcAddr:   grpcAddr,
 		migrations: make(map[string]*MigrationJob),
 	}
 }
@@ -97,6 +100,7 @@ func (o *Orchestrator) StartMigration(ctx context.Context, req *MigrationRequest
 		NetworkIDs:     req.NetworkIDs,
 		Mode:           req.Mode,
 		Strategy:       req.Strategy,
+		TransferMode:   req.TransferMode,
 		Status:         MigrationStatusPending,
 		Phase:          pb.MigrationPhase_MIGRATION_PHASE_INITIALIZING,
 		StartedAt:      time.Now(),
@@ -123,12 +127,25 @@ func (o *Orchestrator) executeMigration(ctx context.Context, job *MigrationJob, 
 	job.Status = MigrationStatusRunning
 	job.mu.Unlock()
 
+	// Determine transfer mode
+	transferMode := job.TransferMode
+	if transferMode == pb.TransferMode_TRANSFER_MODE_UNSPECIFIED {
+		transferMode = pb.TransferMode_TRANSFER_MODE_DIRECT
+	}
+
+	// Get proxy address for proxy mode
+	proxyAddr := ""
+	if transferMode == pb.TransferMode_TRANSFER_MODE_PROXY {
+		proxyAddr = o.getProxyAddress()
+	}
+
 	// Step 1: Tell target to prepare for incoming migration
 	acceptCmd := &pb.MasterCommand{
 		CommandId: fmt.Sprintf("accept-%s", job.ID),
 		Payload: &pb.MasterCommand_StartMigration{
 			StartMigration: &pb.StartMigrationCommand{
-				Role: pb.MigrationRole_MIGRATION_ROLE_TARGET,
+				Role:         pb.MigrationRole_MIGRATION_ROLE_TARGET,
+				TransferMode: transferMode,
 				AcceptRequest: &pb.AcceptMigrationRequest{
 					MigrationId:       job.ID,
 					SourceWorkerId:    job.SourceWorkerID,
@@ -138,6 +155,8 @@ func (o *Orchestrator) executeMigration(ctx context.Context, job *MigrationJob, 
 					ImageIds:          job.ImageIDs,
 					VolumeNames:       job.VolumeNames,
 					NetworkIds:        job.NetworkIDs,
+					TransferMode:      transferMode,
+					ProxyAddress:      proxyAddr,
 				},
 			},
 		},
@@ -153,7 +172,8 @@ func (o *Orchestrator) executeMigration(ctx context.Context, job *MigrationJob, 
 		CommandId: fmt.Sprintf("start-%s", job.ID),
 		Payload: &pb.MasterCommand_StartMigration{
 			StartMigration: &pb.StartMigrationCommand{
-				Role: pb.MigrationRole_MIGRATION_ROLE_SOURCE,
+				Role:         pb.MigrationRole_MIGRATION_ROLE_SOURCE,
+				TransferMode: transferMode,
 				Request: &pb.MigrationRequest{
 					MigrationId:       job.ID,
 					TargetWorkerId:    job.TargetWorkerID,
@@ -165,6 +185,8 @@ func (o *Orchestrator) executeMigration(ctx context.Context, job *MigrationJob, 
 					NetworkIds:        job.NetworkIDs,
 					Mode:              job.Mode,
 					Strategy:          job.Strategy,
+					TransferMode:      transferMode,
+					ProxyAddress:      proxyAddr,
 				},
 			},
 		},
@@ -178,6 +200,11 @@ func (o *Orchestrator) executeMigration(ctx context.Context, job *MigrationJob, 
 	o.logger.Info("migration commands sent",
 		zap.String("migration_id", job.ID),
 	)
+}
+
+// getProxyAddress returns the master's gRPC address for proxy connections
+func (o *Orchestrator) getProxyAddress() string {
+	return o.grpcAddr
 }
 
 func (o *Orchestrator) failMigration(job *MigrationJob, err error) {
@@ -310,6 +337,7 @@ type MigrationRequest struct {
 	NetworkIDs     []string
 	Mode           pb.MigrationMode
 	Strategy       pb.MigrationStrategy
+	TransferMode   pb.TransferMode
 }
 
 func generateMigrationID() string {
