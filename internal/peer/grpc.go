@@ -118,6 +118,11 @@ func (gs *GRPCServer) Stop() {
 	}
 }
 
+// GetServer returns the underlying grpc.Server for registering additional services
+func (gs *GRPCServer) GetServer() *grpc.Server {
+	return gs.server
+}
+
 // TransferVolume implements streaming volume transfer
 func (gs *GRPCServer) TransferVolume(stream pb.MigrationService_TransferVolumeServer) error {
 	ctx := stream.Context()

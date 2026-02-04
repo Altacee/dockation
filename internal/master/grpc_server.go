@@ -33,7 +33,14 @@ func NewGRPCServer(master *Master, cryptoManager *peer.CryptoManager, logger *ob
 	}, nil
 }
 
-// Start starts the gRPC server
+// RegisterOn registers the MasterService on an existing gRPC server
+func (s *GRPCServer) RegisterOn(server *grpc.Server) {
+	pb.RegisterMasterServiceServer(server, s)
+	s.server = server
+	s.logger.Info("master service registered on existing gRPC server")
+}
+
+// Start starts a standalone gRPC server (use RegisterOn instead if another server exists)
 func (s *GRPCServer) Start(addr string) error {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -58,11 +65,10 @@ func (s *GRPCServer) Start(addr string) error {
 	return s.server.Serve(lis)
 }
 
-// Stop stops the gRPC server
+// Stop stops the gRPC server (only if started standalone)
 func (s *GRPCServer) Stop() {
-	if s.server != nil {
-		s.server.GracefulStop()
-	}
+	// Don't stop if registered on external server
+	// The external server is responsible for shutdown
 }
 
 // RegisterWorker handles worker registration

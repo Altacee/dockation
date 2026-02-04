@@ -13,6 +13,7 @@ import (
 	"github.com/artemis/docker-migrate/internal/observability"
 	"github.com/artemis/docker-migrate/internal/peer"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 // Master represents the master node
@@ -69,7 +70,18 @@ func New(
 	return m, nil
 }
 
-// Start starts the master node
+// RegisterGRPCService registers the MasterService on an existing gRPC server
+func (m *Master) RegisterGRPCService(server *grpc.Server) {
+	m.grpcServer.RegisterOn(server)
+	m.logger.Info("master gRPC service registered")
+}
+
+// StartBackgroundTasks starts background tasks like registry cleanup
+func (m *Master) StartBackgroundTasks(ctx context.Context) {
+	m.registry.StartCleanup(ctx, m.config.Master.WorkerTimeout/2)
+}
+
+// Start starts the master node with its own gRPC server (standalone mode)
 func (m *Master) Start(ctx context.Context) error {
 	m.logger.Info("starting master node",
 		zap.String("grpc_addr", m.config.GRPCAddr),

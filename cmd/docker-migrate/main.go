@@ -138,6 +138,26 @@ func runUIServer(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create gRPC server: %w", err)
 	}
 
+	// If running in master mode, create master and register its gRPC service
+	var masterNode *master.Master
+	if cfg.IsMaster() {
+		var err error
+		masterNode, err = master.New(cfg, dockerClient, cryptoManager, transferManager, logger)
+		if err != nil {
+			return fmt.Errorf("failed to create master node: %w", err)
+		}
+
+		// Register MasterService on the existing gRPC server (before it starts)
+		masterNode.RegisterGRPCService(grpcServer.GetServer())
+
+		// Start registry cleanup
+		go masterNode.StartBackgroundTasks(ctx)
+
+		logger.Info("master mode enabled",
+			zap.String("enrollment_token", cfg.Master.EnrollmentToken),
+		)
+	}
+
 	// Start background services
 	go peerDiscovery.Start(ctx)
 	go func() {
@@ -158,28 +178,9 @@ func runUIServer(cmd *cobra.Command, args []string) error {
 		logger,
 	)
 
-	// If running in master mode, create and integrate the master node
-	var masterNode *master.Master
-	if cfg.IsMaster() {
-		var err error
-		masterNode, err = master.New(cfg, dockerClient, cryptoManager, transferManager, logger)
-		if err != nil {
-			return fmt.Errorf("failed to create master node: %w", err)
-		}
-
-		// Register master routes with HTTP server
+	// Register master routes with HTTP server if in master mode
+	if masterNode != nil {
 		httpServer.SetMaster(masterNode)
-
-		// Start master gRPC server (separate from P2P gRPC server)
-		go func() {
-			if err := masterNode.Start(ctx); err != nil {
-				logger.Error("master gRPC server error", zap.Error(err))
-			}
-		}()
-
-		logger.Info("master mode enabled",
-			zap.String("enrollment_token", cfg.Master.EnrollmentToken),
-		)
 	}
 
 	// Handle graceful shutdown
