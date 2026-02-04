@@ -281,7 +281,7 @@ cd "$BUILD_DIR"
 
 # Create placeholder for embedded UI (workers don't need it)
 mkdir -p internal/server/dist
-echo "placeholder" > internal/server/dist/.gitkeep
+echo "<html><body>Worker mode - no UI</body></html>" > internal/server/dist/index.html
 
 go build -o "$BINARY_PATH" ./cmd/docker-migrate
 
