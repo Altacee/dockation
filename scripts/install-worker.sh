@@ -247,7 +247,7 @@ log_info "Binary verified successfully"
 mkdir -p "$CONFIG_DIR"
 chmod 700 "$CONFIG_DIR"
 
-# Create config file
+# Create config file (durations omitted - defaults will be used)
 CONFIG_FILE="${CONFIG_DIR}/worker.json"
 cat > "$CONFIG_FILE" << EOF
 {
@@ -258,9 +258,7 @@ cat > "$CONFIG_FILE" << EOF
   "worker": {
     "master_url": "${MASTER_URL}",
     "name": "${WORKER_NAME}",
-    "labels": {},
-    "reconnect_interval": "5s",
-    "max_reconnect_interval": "5m"
+    "labels": {}
   }
 }
 EOF
