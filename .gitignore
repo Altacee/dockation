@@ -1,0 +1,41 @@
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+*.out
+coverage.html
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+internal/server/dist/
+web/build/
+web/node_modules/
+
+# Configuration
+config.json
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log
+
+# Release artifacts
+release/
+
+.claude
+mcp*

@@ -1,0 +1,432 @@
+syntax = "proto3";
+
+package migrate;
+
+option go_package = "github.com/artemis/docker-migrate/proto;migrate";
+
+// MigrationService handles peer-to-peer resource migration
+service MigrationService {
+  // TransferVolume transfers volume data in chunks with checksums
+  rpc TransferVolume(stream VolumeChunk) returns (stream TransferAck);
+
+  // TransferImageLayers transfers image layers as blobs
+  rpc TransferImageLayers(stream LayerBlob) returns (stream TransferAck);
+
+  // GetResourceList retrieves list of available resources on peer
+  rpc GetResourceList(ResourceRequest) returns (ResourceList);
+
+  // Ping checks peer connectivity and latency
+  rpc Ping(Empty) returns (Pong);
+
+  // TransferContainer transfers container state and configuration
+  rpc TransferContainer(stream ContainerChunk) returns (stream TransferAck);
+
+  // TransferNetwork transfers network configuration
+  rpc TransferNetwork(NetworkConfig) returns (TransferResult);
+}
+
+// VolumeChunk represents a chunk of volume data
+message VolumeChunk {
+  string volume_id = 1;
+  int64 offset = 2;
+  bytes data = 3;
+  string checksum = 4;  // SHA-256 of data
+  int64 total_size = 5;
+  bool is_final = 6;
+}
+
+// LayerBlob represents an image layer
+message LayerBlob {
+  string image_id = 1;
+  string layer_digest = 2;
+  int64 offset = 3;
+  bytes data = 4;
+  string checksum = 5;
+  int64 layer_size = 6;
+  bool is_final = 7;
+}
+
+// ContainerChunk represents container state data
+message ContainerChunk {
+  string container_id = 1;
+  string container_name = 2;
+  bytes state_data = 3;  // JSON-encoded ContainerState
+  string checksum = 4;
+  bool is_final = 5;
+}
+
+// NetworkConfig represents network configuration
+message NetworkConfig {
+  string network_id = 1;
+  string name = 2;
+  bytes config_data = 3;  // JSON-encoded NetworkInfo
+  string checksum = 4;
+}
+
+// TransferAck acknowledges receipt of a chunk
+message TransferAck {
+  int64 offset = 1;
+  bool success = 2;
+  string error = 3;
+  float progress = 4;  // 0.0 to 1.0
+}
+
+// TransferResult reports the final result of a transfer
+message TransferResult {
+  bool success = 1;
+  string error = 2;
+  string resource_id = 3;
+  int64 bytes_transferred = 4;
+  int64 duration_ms = 5;
+}
+
+// ResourceRequest requests list of resources
+message ResourceRequest {
+  ResourceType type = 1;
+  bool include_details = 2;
+}
+
+// ResourceType enum
+enum ResourceType {
+  ALL = 0;
+  CONTAINERS = 1;
+  IMAGES = 2;
+  VOLUMES = 3;
+  NETWORKS = 4;
+}
+
+// ResourceList returns available resources
+message ResourceList {
+  repeated ContainerResource containers = 1;
+  repeated ImageResource images = 2;
+  repeated VolumeResource volumes = 3;
+  repeated NetworkResource networks = 4;
+}
+
+// ContainerResource represents a container
+message ContainerResource {
+  string id = 1;
+  string name = 2;
+  string image = 3;
+  string state = 4;
+  int64 created = 5;
+  map<string, string> labels = 6;
+}
+
+// ImageResource represents an image
+message ImageResource {
+  string id = 1;
+  repeated string tags = 2;
+  int64 size = 3;
+  int64 created = 4;
+  int32 layer_count = 5;
+}
+
+// VolumeResource represents a volume
+message VolumeResource {
+  string name = 1;
+  string driver = 2;
+  int64 size = 3;
+  string mountpoint = 4;
+  map<string, string> labels = 5;
+}
+
+// NetworkResource represents a network
+message NetworkResource {
+  string id = 1;
+  string name = 2;
+  string driver = 3;
+  string scope = 4;
+  bool internal = 5;
+  int32 container_count = 6;
+}
+
+// Empty message for requests with no parameters
+message Empty {}
+
+// Pong response for ping
+message Pong {
+  string peer_id = 1;
+  int64 timestamp = 2;
+  string version = 3;
+}
+
+// ============================================================================
+// Master-Worker Architecture
+// ============================================================================
+
+// MasterService - Workers connect to this on the master node
+service MasterService {
+  // RegisterWorker registers a new worker with the master
+  rpc RegisterWorker(WorkerRegistration) returns (RegistrationResponse);
+
+  // WorkerStream maintains bidirectional communication for heartbeats and commands
+  rpc WorkerStream(stream WorkerMessage) returns (stream MasterCommand);
+
+  // ReportResources reports worker's Docker resource inventory
+  rpc ReportResources(ResourceInventory) returns (AckResponse);
+}
+
+// WorkerService - Master calls workers for direct commands
+service WorkerService {
+  // InitiateMigration instructs worker to start a migration as source
+  rpc InitiateMigration(MigrationRequest) returns (MigrationResponse);
+
+  // AcceptMigration instructs worker to accept incoming migration as target
+  rpc AcceptMigration(AcceptMigrationRequest) returns (AcceptMigrationResponse);
+
+  // HealthCheck verifies worker is healthy and responsive
+  rpc HealthCheck(Empty) returns (HealthResponse);
+
+  // CancelMigration cancels an in-progress migration
+  rpc CancelMigration(CancelMigrationRequest) returns (CancelMigrationResponse);
+}
+
+// WorkerRegistration is sent by worker to register with master
+message WorkerRegistration {
+  string enrollment_token = 1;       // Token provided by master for enrollment
+  string worker_name = 2;            // Human-readable worker name
+  string hostname = 3;               // Worker's hostname
+  string grpc_address = 4;           // Address where worker's gRPC server listens
+  string tls_fingerprint = 5;        // Worker's TLS certificate fingerprint
+  map<string, string> labels = 6;    // Worker labels for filtering
+  string version = 7;                // docker-migrate version
+}
+
+// RegistrationResponse confirms worker registration
+message RegistrationResponse {
+  bool success = 1;
+  string error = 2;
+  string worker_id = 3;              // Assigned worker ID
+  string auth_token = 4;             // Token for subsequent authentication
+  int64 heartbeat_interval_ms = 5;   // How often worker should heartbeat
+  int64 inventory_interval_ms = 6;   // How often to report inventory
+}
+
+// WorkerMessage is sent from worker to master on the stream
+message WorkerMessage {
+  string worker_id = 1;
+  string auth_token = 2;
+
+  oneof payload {
+    Heartbeat heartbeat = 3;
+    MigrationProgress migration_progress = 4;
+    MigrationComplete migration_complete = 5;
+    WorkerError worker_error = 6;
+  }
+}
+
+// MasterCommand is sent from master to worker on the stream
+message MasterCommand {
+  string command_id = 1;
+
+  oneof payload {
+    HeartbeatAck heartbeat_ack = 2;
+    StartMigrationCommand start_migration = 3;
+    CancelMigrationCommand cancel_migration = 4;
+    UpdateConfigCommand update_config = 5;
+    ShutdownCommand shutdown = 6;
+  }
+}
+
+// Heartbeat sent periodically by worker
+message Heartbeat {
+  int64 timestamp = 1;
+  WorkerStatus status = 2;
+  int32 active_migrations = 3;
+  SystemResources system_resources = 4;
+}
+
+// HeartbeatAck acknowledges heartbeat
+message HeartbeatAck {
+  int64 timestamp = 1;
+  bool healthy = 2;
+}
+
+// WorkerStatus enum
+enum WorkerStatus {
+  WORKER_STATUS_UNKNOWN = 0;
+  WORKER_STATUS_IDLE = 1;
+  WORKER_STATUS_BUSY = 2;
+  WORKER_STATUS_DRAINING = 3;
+  WORKER_STATUS_ERROR = 4;
+}
+
+// SystemResources reports worker's system state
+message SystemResources {
+  int64 cpu_percent = 1;          // CPU usage 0-100
+  int64 memory_total = 2;         // Total memory in bytes
+  int64 memory_available = 3;     // Available memory in bytes
+  int64 disk_total = 4;           // Total disk space in bytes
+  int64 disk_available = 5;       // Available disk space in bytes
+  int64 network_rx_bytes = 6;     // Network bytes received
+  int64 network_tx_bytes = 7;     // Network bytes transmitted
+}
+
+// ResourceInventory reports Docker resources on a worker
+message ResourceInventory {
+  string worker_id = 1;
+  string auth_token = 2;
+  int64 timestamp = 3;
+  repeated ContainerResource containers = 4;
+  repeated ImageResource images = 5;
+  repeated VolumeResource volumes = 6;
+  repeated NetworkResource networks = 7;
+}
+
+// AckResponse is a simple acknowledgment
+message AckResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+// MigrationRequest instructs worker to start migration as source
+message MigrationRequest {
+  string migration_id = 1;
+  string target_worker_id = 2;
+  string target_address = 3;
+  string target_fingerprint = 4;
+  repeated string container_ids = 5;
+  repeated string image_ids = 6;
+  repeated string volume_names = 7;
+  repeated string network_ids = 8;
+  MigrationMode mode = 9;
+  MigrationStrategy strategy = 10;
+}
+
+// MigrationResponse acknowledges migration request
+message MigrationResponse {
+  bool accepted = 1;
+  string error = 2;
+  string migration_id = 3;
+}
+
+// AcceptMigrationRequest instructs worker to accept incoming migration
+message AcceptMigrationRequest {
+  string migration_id = 1;
+  string source_worker_id = 2;
+  string source_address = 3;
+  string source_fingerprint = 4;
+  repeated string container_ids = 5;
+  repeated string image_ids = 6;
+  repeated string volume_names = 7;
+  repeated string network_ids = 8;
+}
+
+// AcceptMigrationResponse confirms worker is ready to receive
+message AcceptMigrationResponse {
+  bool accepted = 1;
+  string error = 2;
+  string receive_address = 3;    // Address source should connect to
+}
+
+// HealthResponse from worker health check
+message HealthResponse {
+  bool healthy = 1;
+  WorkerStatus status = 2;
+  string version = 3;
+  int64 uptime_seconds = 4;
+  map<string, string> checks = 5;  // Component health checks
+}
+
+// StartMigrationCommand sent via stream
+message StartMigrationCommand {
+  MigrationRole role = 1;
+  MigrationRequest request = 2;
+  AcceptMigrationRequest accept_request = 3;
+}
+
+// CancelMigrationCommand sent via stream
+message CancelMigrationCommand {
+  string migration_id = 1;
+  string reason = 2;
+}
+
+// CancelMigrationRequest for direct RPC
+message CancelMigrationRequest {
+  string migration_id = 1;
+  string reason = 2;
+}
+
+// CancelMigrationResponse confirms cancellation
+message CancelMigrationResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+// UpdateConfigCommand updates worker configuration
+message UpdateConfigCommand {
+  int64 heartbeat_interval_ms = 1;
+  int64 inventory_interval_ms = 2;
+  map<string, string> labels = 3;
+}
+
+// ShutdownCommand tells worker to gracefully shutdown
+message ShutdownCommand {
+  string reason = 1;
+  bool force = 2;
+}
+
+// MigrationProgress reports progress during migration
+message MigrationProgress {
+  string migration_id = 1;
+  MigrationPhase phase = 2;
+  float progress = 3;              // 0.0 to 1.0
+  int64 bytes_transferred = 4;
+  int64 total_bytes = 5;
+  string current_resource = 6;     // Resource currently being transferred
+  string message = 7;
+}
+
+// MigrationComplete reports migration completion
+message MigrationComplete {
+  string migration_id = 1;
+  bool success = 2;
+  string error = 3;
+  int64 duration_ms = 4;
+  int64 bytes_transferred = 5;
+  repeated string resources_migrated = 6;
+}
+
+// WorkerError reports an error from worker
+message WorkerError {
+  string error_code = 1;
+  string message = 2;
+  string details = 3;
+  bool fatal = 4;
+}
+
+// MigrationRole indicates worker's role in migration
+enum MigrationRole {
+  MIGRATION_ROLE_UNKNOWN = 0;
+  MIGRATION_ROLE_SOURCE = 1;
+  MIGRATION_ROLE_TARGET = 2;
+}
+
+// MigrationMode enum
+enum MigrationMode {
+  MIGRATION_MODE_COLD = 0;
+  MIGRATION_MODE_WARM = 1;
+  MIGRATION_MODE_LIVE = 2;
+}
+
+// MigrationStrategy enum
+enum MigrationStrategy {
+  MIGRATION_STRATEGY_FULL = 0;
+  MIGRATION_STRATEGY_INCREMENTAL = 1;
+  MIGRATION_STRATEGY_SNAPSHOT = 2;
+}
+
+// MigrationPhase enum
+enum MigrationPhase {
+  MIGRATION_PHASE_UNKNOWN = 0;
+  MIGRATION_PHASE_INITIALIZING = 1;
+  MIGRATION_PHASE_TRANSFERRING_IMAGES = 2;
+  MIGRATION_PHASE_TRANSFERRING_VOLUMES = 3;
+  MIGRATION_PHASE_TRANSFERRING_NETWORKS = 4;
+  MIGRATION_PHASE_TRANSFERRING_CONTAINERS = 5;
+  MIGRATION_PHASE_FINALIZING = 6;
+  MIGRATION_PHASE_COMPLETE = 7;
+  MIGRATION_PHASE_FAILED = 8;
+  MIGRATION_PHASE_CANCELLED = 9;
+}

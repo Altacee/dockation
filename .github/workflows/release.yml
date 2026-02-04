@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+      - name: Generate protobuf
+        run: make proto
+
+      - name: Build UI
+        run: |
+          if [ -d "web" ]; then
+            cd web && npm ci && npm run build && cd ..
+            rm -rf internal/server/dist
+            cp -r web/dist internal/server/dist
+          else
+            mkdir -p internal/server/dist
+            echo '<html><body><h1>docker-migrate</h1></body></html>' > internal/server/dist/index.html
+          fi
+
+      - name: Build binaries
+        run: |
+          mkdir -p release
+
+          # Build for each platform
+          for os in linux darwin; do
+            for arch in amd64 arm64; do
+              echo "Building for $os/$arch..."
+              GOOS=$os GOARCH=$arch go build \
+                -ldflags "-X main.Version=${{ github.ref_name }} -X main.BuildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" \
+                -o release/docker-migrate-$os-$arch \
+                ./cmd/docker-migrate
+            done
+          done
+
+          # Copy install script
+          cp scripts/install-worker.sh release/
+          chmod +x release/install-worker.sh
+
+          # Generate checksums
+          cd release
+          sha256sum * > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/docker-migrate-linux-amd64
+            release/docker-migrate-linux-arm64
+            release/docker-migrate-darwin-amd64
+            release/docker-migrate-darwin-arm64
+            release/install-worker.sh
+            release/checksums.txt
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

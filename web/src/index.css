@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: oklch(100% 0 0);
+  --color-foreground: oklch(9% 0.03 285.82);
+  --color-card: oklch(100% 0 0);
+  --color-card-foreground: oklch(9% 0.03 285.82);
+  --color-popover: oklch(100% 0 0);
+  --color-popover-foreground: oklch(9% 0.03 285.82);
+  --color-primary: oklch(53.3% 0.235 265.75);
+  --color-primary-foreground: oklch(98% 0 0);
+  --color-secondary: oklch(96.1% 0 0);
+  --color-secondary-foreground: oklch(11.2% 0.018 285.88);
+  --color-muted: oklch(96.1% 0 0);
+  --color-muted-foreground: oklch(46.9% 0.013 285.94);
+  --color-accent: oklch(96.1% 0 0);
+  --color-accent-foreground: oklch(11.2% 0.018 285.88);
+  --color-destructive: oklch(60.2% 0.177 29.23);
+  --color-destructive-foreground: oklch(98% 0 0);
+  --color-border: oklch(91.4% 0.006 285.88);
+  --color-input: oklch(91.4% 0.006 285.88);
+  --color-ring: oklch(53.3% 0.235 265.75);
+  --radius: 0.5rem;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Prevent navigation during migration */
+.migration-active {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Accessibility improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus visible improvements */
+*:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2;
+}
